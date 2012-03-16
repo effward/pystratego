@@ -1,10 +1,11 @@
 import pygame, os
+from pygame.locals import *
 
 # Loads image with file name: file_name, if colorkey is specified
 # all pixels that are the same color as the specified colorkey will be
 # rendered as invisible
 def load_image(file_name, colorkey=None):
-	full_name = os.path.join('data', file_name)
+	full_name = os.path.join('assets', file_name)
 	
 	try:
 		image = pygame.image.load(full_name)
@@ -33,7 +34,7 @@ def load_sound(file_name):
 	if not pygame.mixer or not pygame.mixer.get_init():
 		return No_Sound()
 		
-	full_name = os.path.join('data', file_name)
+	full_name = os.path.join('assets', file_name)
 	if os.path.exists(full_name) == False:
 		sound = pygame.mixer.Sound(full_name)
 	else:
