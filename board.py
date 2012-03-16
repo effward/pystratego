@@ -12,7 +12,7 @@ class BoardTile(pygame.sprite.Sprite):
 		pass
 		
 class Board(pygame.sprite.Group):
-	def __init__(self):
+	def __init__(self, evManager):
 		# Call Group initializer
 		pygame.sprite.Group.__init__(self)
 		self.tiles = []

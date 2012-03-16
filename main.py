@@ -3,6 +3,8 @@ import helper, board, player
 from pygame.locals import *
 from events import *
 from constants import *
+from board import *
+from player import *
 from weakref import WeakKeyDictionary
 
 class EventManager:
@@ -251,6 +253,56 @@ class PygameMasterView(EventManager):
 		#at the end, handle the event like an EventManager should
 		EventManager.post( self, event )
 		
+class Game:
+	STATE_PREGAME = 0
+	STATE_RUNNING = 1
+	STATE_POSTGAME = 2
+	
+	def __init__(self, evManager):
+		self.evManager = evManager
+		self.evManager.register_listener(self)
+		self.reset()
+		
+	def reset(self):
+		self.state = Game.STATE_PREGAME
+		
+		self.players = []
+		self.maxPlayers = 4
+		self.map = Board(self.evManager)
+		
+	def start(self):
+		self.state = Game.STATE_RUNNING
+		ev = GameStartedEvent(self)
+		self.evManager.post(ev)
+		
+	def add_player(self, player):
+		self.players.append(player)
+		player.SetGame(self)
+		ev = PlayerJoinEvent(player)
+		self.evManager.post(ev)
+		
+	def notify(self, event):
+		if isinstance(event, GameStartRequest):
+			if self.state == Game.STATE_PREGAME:
+				self.start()
+			elif self.state == GAME.STATE_RUNNING:
+				self.reset()
+				self.start()
+				
+		if isinstance(event, PlayerJoinRequest):
+			if len(self.players) < self.maxPlayers:
+				player = Player(self.evManager)
+				player.SetData(event.playerDict)
+				for p in self.players:
+					if p.name == player.name:
+						raise NotImplementedError, "Dup Player"
+				self.add_player(player)
+				
+		if isinstance(event, GUIChangeScreenRequest):
+			ev = GameSyncEvent(self)
+			self.evManager.post(ev)
+			
+
 def main():
 	evManager = EventManager()
 	

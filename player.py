@@ -25,7 +25,7 @@ class Piece(pygame.sprite.Sprite):
 			
 		
 class Player:
-	def __init__(self, color):
+	def __init__(self, evManager, color):
 		self.pieces = pygame.sprite.Group()
 		self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 0)))
 		self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 1)))
