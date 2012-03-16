@@ -1,5 +1,5 @@
 import pygame, sys, random, os
-import helper, board
+import helper, board, player
 import constants as const
 from pygame.locals import *
 
@@ -10,12 +10,16 @@ def main():
 	screen = pygame.display.set_mode(const.SCREEN_SIZE)
 	pygame.display.set_caption('pyStratego')
 	
+	# Free to use texture from http://www.designbash.com/wp-content/uploads/2010/01/wood-table-texture-2.jpg
 	background, background_rect = helper.load_image("bg.bmp")
 	screen.blit(background, (0,0))
 	
 	b = board.Board()
+	player1 = player.Player('red')
 	
 	running = 1
+	# 0 = pre-game, 1 = game, 2 = post-game
+	mode = 0
 	
 	while running:
 		for event in pygame.event.get():
@@ -24,10 +28,18 @@ def main():
 			elif event.type == KEYDOWN:
 				if event.key == K_ESCAPE:
 					running = 0
+			# Process Mouse input
+			elif event.type == MOUSEBUTTONDOWN:
+				if event.button == 1:
+					pass
 					
 		b.clear(screen, background)
 		b.update()
 		b.draw(screen)
+		
+		player1.pieces.clear(screen, background)
+		player1.pieces.update()
+		player1.pieces.draw(screen)
 					
 		pygame.display.flip()
 		
