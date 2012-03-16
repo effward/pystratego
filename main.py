@@ -29,9 +29,11 @@ def main():
 				if event.key == K_ESCAPE:
 					running = 0
 			# Process Mouse input
-			elif event.type == MOUSEBUTTONDOWN:
+			elif event.type == MOUSEBUTTONUP:
 				if event.button == 1:
-					pass
+					mouseRect = pygame.Rect(event.pos[0] - 5, event.pos[1] - 5, 10, 10)
+					for piece in player1.pieces.sprites():
+						piece.click_check(mouseRect)
 					
 		b.clear(screen, background)
 		b.update()

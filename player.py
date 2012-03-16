@@ -14,6 +14,12 @@ class Piece(pygame.sprite.Sprite):
 		self.x_velocity = 0
 		self.y_velocity = 0
 		
+	def click_check(self, mouseRect):
+		if mouseRect.colliderect(self.rect):
+			print 'Clicked piece: ' + self.type
+			
+		
+		
 	def update(self):
 		if self.x > 0 and self.y > 0:
 			targetPos =  (self.x * const.TILE_SIZE + const.BOARD_OFFSET_X, self.y * const.TILE_SIZE + const.BOARD_OFFSET_Y)
