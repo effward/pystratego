@@ -20,6 +20,7 @@ def main():
 	#for i in ['red', 'red', 'red', 'red']:
 	#	players.append(player.Player(i))
 	players.append(player.Player(b, 'red', True))
+	players.append(player.Player(b, 'blue', True))
 	myPlayer = 0
 	
 	running = 1
