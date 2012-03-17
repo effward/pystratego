@@ -1,5 +1,6 @@
 import pygame, helper
 import constants as const
+from constants import *
 
 class BoardTile(pygame.sprite.Sprite):
 	def __init__(self, type, pos):
@@ -7,7 +8,13 @@ class BoardTile(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = helper.load_image('tile' + type + '.bmp')
 		self.rect.center = pos
+		self.type = type
 		
+	def click_check(self, mouseRect):
+		if mouseRect.colliderect(self.rect):
+			return self	
+		return None
+
 	def update(self):
 		pass
 		
@@ -44,3 +51,8 @@ class Board(pygame.sprite.Group):
 				tempList.append(tempTile)
 				self.add(tempTile)
 			self.tiles.append(tempList)
+	
+	def is_legal(self, x, y):
+		if x < 0 or x >= BOARD_SIZE or y < 0 or y >= BOARD_SIZE:
+			return False
+		return self.tiles[x][y].type == '1'	
