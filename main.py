@@ -14,6 +14,9 @@ def main():
 	# Free to use texture from http://www.designbash.com/wp-content/uploads/2010/01/wood-table-texture-2.jpg
 	background, background_rect = load_image("bg.bmp")
 	screen.blit(background, (0,0))
+	titleImage, titleRect = load_image("title.bmp")
+	titleRect.center = (SCREEN_WIDTH/2, 20)
+	screen.blit(titleImage, titleRect)
 	
 	b = board.Board()
 	players = []
@@ -51,7 +54,9 @@ def main():
 									if starting_moves(selected, b, players) == []:
 										mode = 1
 										target = None
-										selectedMoves = []
+									for x,y in selectedMoves:
+										b.tiles[x][y].swap_highlight()
+									selectedMoves = []
 									haveSelected = False
 									selected = None
 									break
@@ -60,7 +65,11 @@ def main():
 									selected = piece.click_check(mouseRect)
 									if selected is not None:
 										haveSelected = True
+										for x,y in selectedMoves:
+											b.tiles[x][y].swap_highlight()
 										selectedMoves = starting_moves(selected, b, players)
+										for x,y in selectedMoves:
+											b.tiles[x][y].swap_highlight()
 										break
 						else:
 							for piece in players[myPlayer].pieces.sprites():
@@ -68,7 +77,11 @@ def main():
 								if selected is not None:
 									haveSelected = True
 									target = None
+									for x,y in selectedMoves:
+										b.tiles[x][y].swap_highlight()
 									selectedMoves = starting_moves(selected, b, players)
+									for x,y in selectedMoves:
+										b.tiles[x][y].swap_highlight()
 									break
 					elif mode is 1: #playing
 						if True: #turn % NUM_PLAYERS == myPlayer:
@@ -79,6 +92,8 @@ def main():
 										selected.move(x,y)
 										haveSelected = False
 										turn += 1
+										for x,y in selectedMoves:
+											b.tiles[x][y].swap_highlight()
 										selectedMoves = []
 										selected = None
 										break	
@@ -88,7 +103,11 @@ def main():
 										if selected is not None:
 											haveSelected = True
 											if not selected.trapped:
+												for x,y in selectedMoves:
+													b.tiles[x][y].swap_highlight()
 												selectedMoves = possible_moves(selected, b, players)
+												for x,y in selectedMoves:
+													b.tiles[x][y].swap_highlight()
 											break
 							else:
 								for piece in players[myPlayer].pieces.sprites():
@@ -96,7 +115,11 @@ def main():
 									if selected is not None:
 										haveSelected = True
 										if not selected.trapped:
+											for x,y in selectedMoves:
+												b.tiles[x][y].swap_highlight()
 											selectedMoves = possible_moves(selected, b, players)
+											for x,y in selectedMoves:
+												b.tiles[x][y].swap_highlight()
 										break
 					
 		b.clear(screen, background)
@@ -108,6 +131,7 @@ def main():
 		b.draw(screen)
 		for p in players:
 				p.pieces.draw(screen)
+		screen.blit(titleImage, titleRect)
 					
 		pygame.display.flip()
 		if mode is 0:

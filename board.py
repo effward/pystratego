@@ -7,6 +7,9 @@ class BoardTile(pygame.sprite.Sprite):
 		# Call Sprite initializer
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = helper.load_image('tile' + type + '.bmp')
+		self.altImage, self.altRect = None, None
+		if type is '1':
+			self.altImage, self.altRect = helper.load_image('tile' + type + '_hl.bmp')
 		self.rect.center = pos
 		self.type = type
 		
@@ -14,6 +17,14 @@ class BoardTile(pygame.sprite.Sprite):
 		if mouseRect.colliderect(self.rect):
 			return self	
 		return None
+
+	def swap_highlight(self):
+		if self.altImage is not None:
+			tempImage = None
+			tempImage = self.image
+			self.image = self.altImage
+			self.altImage = tempImage
+
 
 	def update(self):
 		pass
