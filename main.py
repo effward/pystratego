@@ -33,8 +33,10 @@ def main():
 	haveSelected = False
 	selectedMoves = []
 	selected = None
+	turnPlayer = 0
 	
 	while running:
+		turnPlayer = turn % NUM_PLAYERS
 		for event in pygame.event.get():
 			if event.type == QUIT: sys.exit()
 			# Process Keyboard input
@@ -84,7 +86,7 @@ def main():
 										b.tiles[x][y].swap_highlight()
 									break
 					elif mode is 1: #playing
-						if True: #turn % NUM_PLAYERS == myPlayer:
+						if True: #turnPlayer is myPlayer:
 							if haveSelected:
 								for x,y  in selectedMoves:
 									target = b.tiles[x][y].click_check(mouseRect)
@@ -94,6 +96,18 @@ def main():
 										turn += 1
 										for x,y in selectedMoves:
 											b.tiles[x][y].swap_highlight()
+										# Check if combat takes place
+										for i in range(len(players)):
+											if i is not turnPlayer:
+												for piece in turnPlayer[i].pieces:
+													defender = piece.click_check(target.rect)
+													# Combat - see who wins
+													if defender is not None:
+														result = fight(selected, defender)
+														if result is 0:
+															selected.move(-1,-1)
+														else:
+															defender.move(-1,-1)
 										selectedMoves = []
 										selected = None
 										break	

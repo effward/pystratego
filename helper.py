@@ -2,6 +2,35 @@ import pygame, os, sys
 from pygame.locals import *
 from constants import *
 
+# Determines the outcome of combat between the pieces attacker and defender
+def fight(attacker, defender):
+	try:
+		aType = int(attacker.type)
+		dType = int(defender.type)
+		if aType >= dType:
+			return 1
+		else:
+			return 0
+	except:
+		if attacker.type is 'B':
+			aType = -1
+		elif attacker.type is 'S':
+			aType = -2
+		elif attacker.type is 'F':
+			aType = -3
+		else:
+			aType = int(attacker.type)
+		if defender.type is 'B':
+			dType = -1
+		elif defender.type is 'S':
+			dType = -2
+		elif defender.type is 'F':
+			dType = -3
+		else:
+			dType = int(defender.type)
+		return 1
+
+
 # Returns all starting tiles for given color
 def starting_tiles(color, b):
 	moves = []
