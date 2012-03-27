@@ -99,8 +99,8 @@ def main():
 										# Check if combat takes place
 										for i in range(len(players)):
 											if i is not turnPlayer:
-												for piece in turnPlayer[i].pieces:
-													defender = piece.click_check(target.rect)
+												for piece in players[i].pieces:
+													defender = piece.click_check(mouseRect)
 													# Combat - see who wins
 													if defender is not None:
 														result = fight(selected, defender)
@@ -124,7 +124,7 @@ def main():
 													b.tiles[x][y].swap_highlight()
 											break
 							else:
-								for piece in players[myPlayer].pieces.sprites():
+								for piece in players[turnPlayer].pieces.sprites():
 									selected = piece.click_check(mouseRect)
 									if selected is not None:
 										haveSelected = True
