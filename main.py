@@ -24,6 +24,8 @@ def main():
 	#	players.append(player.Player(i))
 	players.append(player.Player(b, 'red', True))
 	players.append(player.Player(b, 'blue', True))
+	players.append(player.Player(b, 'dred', True))
+	players.append(player.Player(b, 'dblue', True))
 	myPlayer = 0
 	
 	running = 1
@@ -90,7 +92,7 @@ def main():
 							if haveSelected:
 								for x,y  in selectedMoves:
 									target = b.tiles[x][y].click_check(mouseRect)
-									if target is not None:
+									if target is not None and selected is not None:
 										selected.move(x,y)
 										haveSelected = False
 										turn += 1

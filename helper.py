@@ -161,7 +161,7 @@ def possible_moves(selected, board, players):
 	elif selected.type is '6':
 		extraMoves = []
 		for i,j in moves:
-			if is_occupied_excluding(p, players, board, i, j):
+			if is_occupied_excluding(p, players, board, i, j) or is_occupied(p, board, i, j):
 				continue
 			if (i-1 is not x or j is not y) and board.is_legal(i-1, j) and not(is_occupied(p, board, i-1, j)):
 				extraMoves.append((i-1,j))
@@ -169,7 +169,7 @@ def possible_moves(selected, board, players):
 				extraMoves.append((i,j-1))
 			if (i+1 is not x or j is not y) and board.is_legal(i+1, j) and not(is_occupied(p, board, i+1, j)):
 				extraMoves.append((i+1,j))
-			if (i is not x or j+1 is not y) and board.is_legal(i, j+1):
+			if (i is not x or j+1 is not y) and board.is_legal(i, j+1) and not(is_occupied(p, board, i, j+1)):
 				extraMoves.append((i, j+1))
 		for move in extraMoves:
 			moves.append(move)
