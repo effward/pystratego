@@ -1,3 +1,11 @@
+import threading
+from pygame.locals import *
+
+# Meta constants
+USERS_FILE = 'users.txt'
+MODECHANGE = USEREVENT
+CHATMESSAGE = USEREVENT+1
+
 # Screen constants
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
@@ -16,3 +24,6 @@ PIECE_START_Y = BOARD_OFFSET_Y
 
 # Player constants
 NUM_PLAYERS = 4
+
+# Threading
+CHAT_QUEUE_LOCK = threading.Lock()

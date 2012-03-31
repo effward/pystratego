@@ -201,6 +201,7 @@ def getPos(x,y):
 	i = BOARD_OFFSET_X + TILE_SIZE * x 
 	j = BOARD_OFFSET_Y + TILE_SIZE * y 
 	return (i,j)
+	
 
 # Loads image with file name: file_name, if colorkey is specified
 # all pixels that are the same color as the specified colorkey will be
