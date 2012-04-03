@@ -1,7 +1,10 @@
-import ssl, logging, sys, threading
+import ssl, logging, sys, threading, pygame
 from sleekxmpp import ClientXMPP
 from sleekxmpp.exceptions import IqError, IqTimeout
 from constants import *
+from pygame.locals import *
+from pygame.event import Event
+from os import remove
 
 # Sets correct default encoding depending on version of python
 if sys.version_info < (3, 0):
@@ -9,7 +12,7 @@ if sys.version_info < (3, 0):
     sys.setdefaultencoding('utf8')
 
 class Client(ClientXMPP, threading.Thread):
-	def __init__(self, jid, password, room, nick, target_jid, target_node='', get=''):
+	def __init__(self, jid, password, lobby, nick, target_jid, target_node='', get=''):
 		ClientXMPP.__init__(self, jid, password, sasl_mech='ANONYMOUS')
 		threading.Thread.__init__(self)
 		
@@ -21,7 +24,8 @@ class Client(ClientXMPP, threading.Thread):
 		self.register_plugin('xep_0045') # Multi-User Chat
 		self.register_plugin('xep_0199') # XMPP Ping
 						
-		self.room = room
+		self.lobby = lobby
+		self.room = None
 		self.nick = nick
 		self.get = get
 		self.target_jid = target_jid
@@ -38,6 +42,9 @@ class Client(ClientXMPP, threading.Thread):
 		self.add_event_handler("groupchat_message", self.muc_message)
 		self.add_event_handler("muc::%s::got_online" % self.room, self.muc_online)
 		self.add_event_handler("message", self.message)
+		self.add_event_handler("send_move", self.send_move)
+		self.add_event_handler("join_room", self.join_room)
+		self.add_event_handler("get_rooms", self.get_rooms)
 		
 		# For use with OpenFire server
 		self.ssl_version = ssl.PROTOCOL_SSLv3
@@ -58,7 +65,7 @@ class Client(ClientXMPP, threading.Thread):
 		self.send_presence()
 		
 		# Join the lobby
-		self['xep_0045'].joinMUC('lobby@stratego.andrew-win7', self.nick, password='pystratego', wait=True)
+		self['xep_0045'].joinMUC(self.lobby, self.nick, password='pystratego', wait=True)
 		
 		# Create a new room and join it
 		#self['xep_0045'].joinMUC(self.room, self.nick, password='hello123', wait=True)
@@ -94,10 +101,46 @@ class Client(ClientXMPP, threading.Thread):
 			print('Items:')
 			for item in items['disco_items']['items']:
 				print('  - %s' % str(item))
-
+				
+		pygame.event.post(Event(NETWORK, msg='connected'))
+				
+	def get_rooms(self, event):
+		#self.update_roster('stratego.andrew-win7')
+		rooms = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True)
+		print 'Rooms:'
+		FILE_LOCK.acquire()
+		remove(ROOMS_FILE)
+		f = open(ROOMS_FILE, 'w')
+		for room in rooms['disco_items']['items']:
+			name = room[0].split('@')[0]
+			print (' - %s' % name)
+			f.write(name)
+			f.write('\n')
+		f.close()
+		FILE_LOCK.release()
+			
+		pygame.event.post(Event(NETWORK, msg='got_rooms'))
+		
+				
+	def send_move(self, move_data):
+		#self.send_message(mto=
+		print 'Sending move!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 			
 		#logging.debug('sending message')
 		#self.send_message(mto='Admin@localhost', mbody='testing 123')
+		
+	def join_room(self, room_data):
+		self.room = room_data
+		self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+		players = self['xep_0030'].get_items(jid=self.room, node=self.target_node, block=True)
+		for player in players['disco_items']['items']:
+			name = player[0].split('@')[0]
+			print (' - %s' % name)
+		if players:
+			pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=len(players)))
+		else:
+			print 'Failed to connect'
+			#self.disconnect()
 			
 	def message(self, msg):
 		if msg['type'] in ('chat', 'normal'):
@@ -105,10 +148,12 @@ class Client(ClientXMPP, threading.Thread):
 			
 	def muc_message(self, msg):
 		if msg['mucnick'] != self.nick and self.nick in msg['body']:
+			print '********' + msg['from'].bare + '**************'
 			self.send_message(mto=msg['from'].bare, mbody="I heard that, %s." % msg['mucnick'], mtype='groupchat')
 							  
 	def muc_online(self, presence):
 		if presence['muc']['nick'] != self.nick:
+			print '********' + presence['from'].bare + '**************'
 			self.send_message(mto=presence['from'].bare, mbody="Hello, %s %s" % (presence['muc']['role'], presence['muc']['nick']), mtype='groupchat')
 			
 		

@@ -3,8 +3,10 @@ from pygame.locals import *
 
 # Meta constants
 USERS_FILE = 'users.txt'
+ROOMS_FILE = 'rooms.txt'
 MODECHANGE = USEREVENT
 CHATMESSAGE = USEREVENT+1
+NETWORK = USEREVENT+2
 
 # Screen constants
 SCREEN_WIDTH = 1280
@@ -27,3 +29,4 @@ NUM_PLAYERS = 4
 
 # Threading
 CHAT_QUEUE_LOCK = threading.Lock()
+FILE_LOCK = threading.Lock()

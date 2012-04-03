@@ -110,10 +110,21 @@ def load_lobby():
 	box = gui.ScrollArea(t,800,550)
 	main.add(box,20,60)
 	
-	box.connect(CHATMESSAGE, chat_message,1,2,3)
+	box.connect(gui.CLICK, chat_message,1,2,3)
 	
 	lobby.init(main)
 	return lobby
+	
+def load_loading_screen():
+	screen = MyApp()
+	screen.connect(gui.QUIT, screen.quit, None)
+	
+	main = gui.Container(width=500, height=400)
+	
+	main.add(gui.Label("Finding Available Servers...", cls="h1"), 100, 100)
+	
+	screen.init(main)
+	return screen
 	
 def load_game_lobby():
 	menu = gui.App()
@@ -130,25 +141,6 @@ def load_game_lobby():
 	main.add(my_list, 250, 80)
 	
 	count = 1
-	
-	def remove_list_item(arg):
-		v = my_list.value
-		if v:
-			item = v
-			my_list.remove(item)
-			my_list.resize()
-			my_list.repaint()
-		fh, abs_path = mkstemp()
-		new_users = open(abs_path, 'w')
-		users = open(USERS_FILE)
-		for line in users:
-			if line and not(line.strip()  == v):
-				new_users.write(line)
-		new_users.close()
-		close(fh)
-		users.close()
-		remove(USERS_FILE)
-		move(abs_path, USERS_FILE)
 
 	def add_list_item(arg):
 		my_list.add(my_input.value,value=my_input.value)
@@ -159,17 +151,19 @@ def load_game_lobby():
 		users.write('\n')
 		users.close()
 		
-	def select_user(arg):
-		user = my_list.value
-		if user:
-			pygame.event.post(Event(MODECHANGE, mode=1, nick=user))
+	def select_room(arg):
+		room_name = my_list.value
+		if room_name:
+			pygame.event.post(Event(MODECHANGE, mode=3, room=room_name))
 		
-	users = open(USERS_FILE, 'r')
-	for line in users:
-		user = line.strip()
-		if user:
-			my_list.add(user, value=user)
-	users.close()
+	FILE_LOCK.acquire()
+	rooms = open(ROOMS_FILE, 'r')
+	for line in rooms:
+		room = line.strip()
+		if room:
+			my_list.add(room, value=room)
+	rooms.close()
+	FILE_LOCK.release()
 	
 	b = gui.Button("Create New Game", width=150)
 	main.add(b, 40, 110)
@@ -177,16 +171,56 @@ def load_game_lobby():
 	
 	b = gui.Button("Select", width=150)
 	main.add(b, 250, 200)
-	b.connect(gui.CLICK, select_user, None)
+	b.connect(gui.CLICK, select_room, None)
 	
 	menu.init(main)
 	
 	return menu
 	
+def load_loading_game():
+	screen = MyApp()
+	screen.connect(gui.QUIT, screen.quit, None)
+	
+	main = gui.Container(width=500, height=400)
+	
+	main.add(gui.Label("Connecting to Game...", cls="h1"), 100, 100)
+	
+	screen.init(main)
+	return screen
+	
+def load_pre_game_hud():
+	hud = gui.App()
+	hud.connect(gui.QUIT, hud.quit, None)
+	
+	main = gui.Container(width=1280, height=720)
+	
+	main.add(gui.Label("Choose Your Positions", cls="h1"), 20, 20)
+	
+	hud.init(main)
+	return hud
+	
+def load_game_hud():
+	hud = gui.App()
+	hud.connect(gui.QUIT, hud.quit, None)
+	
+	main = gui.Container(width=1280, height=720)
+	
+	main.add(gui.Label("<Game Name>", cls="h1"), 20, 20)
+	
+	hud.init(main)
+	return hud
+	
 def load_hud(mode):
 	if mode is 0:
 		return load_pre_lobby()
 	elif mode is 1:
-		return load_lobby()
+		#return load_lobby()
+		return load_loading_screen()
 	elif mode is 2:
 		return load_game_lobby()
+	elif mode is 3:
+		return load_loading_game()
+	elif mode is 4:
+		return load_pre_game_hud()
+	elif mode is 5:
+		return load_game_hud()

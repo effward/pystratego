@@ -31,14 +31,14 @@ def main():
 	players = []
 	#for i in ['red', 'red', 'red', 'red']:
 	#	players.append(player.Player(i))
-	players.append(player.Player(b, 'red', True))
-	players.append(player.Player(b, 'blue', True))
-	players.append(player.Player(b, 'dred', True))
-	players.append(player.Player(b, 'dblue', True))
+	players.append(player.Player(b, 'red', False))
+	players.append(player.Player(b, 'blue', False))
+	players.append(player.Player(b, 'dred', False))
+	players.append(player.Player(b, 'dblue', False))
 	myPlayer = 0
 	
 	running = 1
-	# 0 = pre-lobby, 1 = lobby, 2 = game-lobby, 3 = pre-game, 4 = game, 5 = post-game
+	# 0 = pre-lobby, 1 = loading/lobby, 2 = server-select, 3 = loading/game, 4 = pre-game, 5 = game, 6 = post-game
 	mode = 0
 	turn = 0
 	haveSelected = False
@@ -56,28 +56,35 @@ def main():
 			elif event.type == KEYDOWN:
 				if event.key == K_ESCAPE:
 					running = 0
+			# Check for network events:
+			elif event.type == NETWORK:
+				if event.msg == 'connected':
+					client.event("get_rooms", None)
+				if event.msg == 'got_rooms':
+					pygame.event.post(Event(MODECHANGE, mode=2))
+				if event.msg == 'joined_room':
+					pygame.event.post(Event(MODECHANGE, mode=4, room=event.room, me=event.count))
 			# Check for mode changes
-			if event.type == MODECHANGE:
+			elif event.type == MODECHANGE:
 				mode = event.mode
-				if mode is 1:
+				if mode is 1: # loading screen
 					jid = event.nick + '@andrew-win7'
 					print jid
 					client = Client(jid, 'hello123', 'lobby@stratego.andrew-win7', event.nick, 'stratego.andrew-win7', get='all')
-					#TEMPORARY FIX
-					#mode = 2
-					#END TEMP FIX
-					hud.quit()
-					hud = load_hud(mode)
-					for i in range(10):
-						n = 'test' + str(i)
-						pygame.event.post(Event(CHATMESSAGE, nick=n, body='testing'))
-					#chatBox.tr()
-					#chatBox.td(gui.Label(str(("point at "))))
+				elif mode is 3:
+					jid = event.room + '@stratego.andrew-win7'
+					client.event("join_room", jid)
+				elif mode is 4:
+					myPlayer = event.me
+					print "I'm player " + str(myPlayer)
+				hud.quit()
+				hud = load_hud(mode)
+				
 			# Process Mouse input
 			elif event.type == MOUSEBUTTONUP:
 				if event.button == 1:
 					mouseRect = pygame.Rect(event.pos[0] - 5, event.pos[1] - 5, 10, 10)
-					if mode is 3: #pre-game
+					if mode is 4: #pre-game
 						if haveSelected:
 							for x,y in selectedMoves:
 								target = b.tiles[x][y].click_check(mouseRect)
@@ -115,12 +122,13 @@ def main():
 									for x,y in selectedMoves:
 										b.tiles[x][y].swap_highlight()
 									break
-					elif mode is 4: #playing
+					elif mode is 5: #playing
 						if True: #turnPlayer is myPlayer:
 							if haveSelected:
 								for x,y  in selectedMoves:
 									target = b.tiles[x][y].click_check(mouseRect)
 									if target is not None and selected is not None:
+										client.event('send_move', (turn, color, selected.x, selected.y, x, y))
 										selected.move(x,y)
 										haveSelected = False
 										turn += 1
@@ -165,11 +173,12 @@ def main():
 											for x,y in selectedMoves:
 												b.tiles[x][y].swap_highlight()
 										break
-			hud.event(event)
+			if event:
+				hud.event(event)
 			
 		# Clear the screen, update sprites, draw to screen
 		screen.blit(background, (0,0))
-		if mode in [3,4,5]:
+		if mode in [4,5,6]:
 			b.clear(screen, background)
 			for p in players:
 				p.pieces.clear(screen,background)
@@ -185,11 +194,11 @@ def main():
 		pygame.display.flip()
 		
 		# Mode change logic
-		if mode is 3:
+		if mode is 4:
 			readyToStart = True
 			for p in players:
 				readyToStart = readyToStart and p.ready()
 			if readyToStart:
-				mode = 1
+				pygame.event.post(Event(MODECHANGE, mode=5))
 		
 if __name__ == '__main__': main()
