@@ -30,6 +30,7 @@ class Client(ClientXMPP, threading.Thread):
 		self.get = get
 		self.target_jid = target_jid
 		self.target_node = target_node
+		self.players = 0
 		
 		# Values to control which disco entities are reported
 		self.info_types = ['', 'all', 'info', 'identities', 'features']
@@ -40,11 +41,11 @@ class Client(ClientXMPP, threading.Thread):
 		# Event handlers
 		self.add_event_handler("session_start", self.session_start)
 		self.add_event_handler("groupchat_message", self.muc_message)
-		self.add_event_handler("muc::%s::got_online" % self.room, self.muc_online)
 		self.add_event_handler("message", self.message)
 		self.add_event_handler("send_move", self.send_move)
 		self.add_event_handler("join_room", self.join_room)
 		self.add_event_handler("get_rooms", self.get_rooms)
+		self.add_event_handler("create_room", self.create_room)
 		
 		# For use with OpenFire server
 		self.ssl_version = ssl.PROTOCOL_SSLv3
@@ -103,6 +104,16 @@ class Client(ClientXMPP, threading.Thread):
 				print('  - %s' % str(item))
 				
 		pygame.event.post(Event(NETWORK, msg='connected'))
+		
+	def create_room(self, room_name):
+		"""self.room = room_name
+		self.players = 0
+		self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+		self['xep_0045'].configureRoom(room)
+		self.add_event_handler("muc::%s::got_online" % self.room, self.muc_online)
+		python.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=self.players))
+		self.players += 1"""
+		self.send_message(mto=SERVER_JID_PATTERN % room_name, mbody=('CREATE: ' + room_name), mtype='normal')
 				
 	def get_rooms(self, event):
 		#self.update_roster('stratego.andrew-win7')
@@ -129,22 +140,33 @@ class Client(ClientXMPP, threading.Thread):
 		#logging.debug('sending message')
 		#self.send_message(mto='Admin@localhost', mbody='testing 123')
 		
-	def join_room(self, room_data):
-		self.room = room_data
+	def join_room(self, room_name):
+		self.room = ROOM_JID_PATTERN % room_name
+		self.send_message(mto=SERVER_JID_PATTERN % room_name, mbody=('JOIN: ' + room_name), mtype='normal')
 		self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
-		players = self['xep_0030'].get_items(jid=self.room, node=self.target_node, block=True)
-		for player in players['disco_items']['items']:
-			name = player[0].split('@')[0]
-			print (' - %s' % name)
-		if players:
-			pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=len(players)))
-		else:
-			print 'Failed to connect'
-			#self.disconnect()
 			
 	def message(self, msg):
 		if msg['type'] in ('chat', 'normal'):
-			msg.reply("Thanks for sending\n% (body) s" % msg).send()
+			body = msg['body'].split(':')
+			if len(body) > 1:
+				command = body[0].strip()
+				if command == 'CREATE' and len(body) is 3:
+					room = body[1].strip()
+					result = body[2].strip()
+					if result == 'SUCCESS':
+						self.room = ROOM_JID_PATTERN % room
+						self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=0))
+					else:
+						self.room = None
+						pygame.event.post(Event(NETWORK, msg='failure', details='Failed to create room'))
+				if command == 'JOIN' and len(body) is 4:
+					room = body[1].strip()
+					result = body[2].strip()
+					me = body[3].strip()
+					if result == 'SUCCESS':
+						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=me))
+							
 			
 	def muc_message(self, msg):
 		if msg['mucnick'] != self.nick and self.nick in msg['body']:
@@ -153,8 +175,7 @@ class Client(ClientXMPP, threading.Thread):
 							  
 	def muc_online(self, presence):
 		if presence['muc']['nick'] != self.nick:
-			print '********' + presence['from'].bare + '**************'
-			self.send_message(mto=presence['from'].bare, mbody="Hello, %s %s" % (presence['muc']['role'], presence['muc']['nick']), mtype='groupchat')
+			self.send_message(mto=presence['from'].bare, mbody=("PLAYER: " + presence['muc']['nick'] + ":" + str(self.players)), mtype='groupchat')
 			
 		
 		

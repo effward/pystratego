@@ -60,22 +60,27 @@ def main():
 			elif event.type == NETWORK:
 				if event.msg == 'connected':
 					client.event("get_rooms", None)
-				if event.msg == 'got_rooms':
+				elif event.msg == 'got_rooms':
 					pygame.event.post(Event(MODECHANGE, mode=2))
-				if event.msg == 'joined_room':
+				elif event.msg == 'joined_room':
 					pygame.event.post(Event(MODECHANGE, mode=4, room=event.room, me=event.count))
+				elif event.msg == 'create_room':
+					client.event('create_room', event.room)
+				elif event.msg == 'failure':
+					print event.details
+					#TODO: deal with network failures
 			# Check for mode changes
 			elif event.type == MODECHANGE:
 				mode = event.mode
 				if mode is 1: # loading screen
 					jid = event.nick + '@andrew-win7'
 					print jid
-					client = Client(jid, 'hello123', 'lobby@stratego.andrew-win7', event.nick, 'stratego.andrew-win7', get='all')
+					client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
 				elif mode is 3:
-					jid = event.room + '@stratego.andrew-win7'
-					client.event("join_room", jid)
+					room = event.room
+					client.event("join_room", room)
 				elif mode is 4:
-					myPlayer = event.me
+					myPlayer = int(event.me)
 					print "I'm player " + str(myPlayer)
 				hud.quit()
 				hud = load_hud(mode)
@@ -85,34 +90,49 @@ def main():
 				if event.button == 1:
 					mouseRect = pygame.Rect(event.pos[0] - 5, event.pos[1] - 5, 10, 10)
 					if mode is 4: #pre-game
+						# If a piece is selected 
 						if haveSelected:
+							# check if the player clicked one of the possible moves
 							for x,y in selectedMoves:
 								target = b.tiles[x][y].click_check(mouseRect)
 								if target is not None and selected is not None:
+									client.event('send_move', (turn, color, selected.x, selected.y, x, y))
 									selected.move(x,y)
-									if starting_moves(selected, b, players) == []:
-										mode = 1
-										target = None
+									# Turn off highlights
 									for x,y in selectedMoves:
 										b.tiles[x][y].swap_highlight()
 									selectedMoves = []
 									haveSelected = False
 									selected = None
 									break
+							# If the player didn't click on a correct move
 							if target is None:
+								# Check if they clicked on one of their other pieces
 								for piece in players[myPlayer].pieces.sprites():
-									selected = piece.click_check(mouseRect)
-									if selected is not None:
+									temp = piece.click_check(mouseRect)
+									# if so highlight moves for that piece
+									if temp is not None:
+										# If clicked selected piece, deselect it
+										if temp == selected:
+											haveSelected = False
+											selected = None
+											for x,y in selectedMoves:
+												b.tiles[x][y].swap_highlight()
+											break
 										haveSelected = True
+										selected = temp
 										for x,y in selectedMoves:
 											b.tiles[x][y].swap_highlight()
 										selectedMoves = starting_moves(selected, b, players)
 										for x,y in selectedMoves:
 											b.tiles[x][y].swap_highlight()
 										break
+						# If no piece is selected
 						else:
+							# Check if player clicked on a piece
 							for piece in players[myPlayer].pieces.sprites():
 								selected = piece.click_check(mouseRect)
+								# If so, highlight it's possible moves
 								if selected is not None:
 									haveSelected = True
 									target = None

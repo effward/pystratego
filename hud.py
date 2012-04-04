@@ -143,13 +143,16 @@ def load_game_lobby():
 	count = 1
 
 	def add_list_item(arg):
+		pygame.event.post(Event(NETWORK, msg='create_room', room=my_input.value))
 		my_list.add(my_input.value,value=my_input.value)
 		my_list.resize()
 		my_list.repaint()
-		users = open(USERS_FILE, 'a')
-		users.write(my_input.value)
-		users.write('\n')
-		users.close()
+		FILE_LOCK.acquire()
+		rooms = open(ROOMS_FILE, 'a')
+		rooms.write(my_input.value)
+		rooms.write('\n')
+		rooms.close()
+		FILE_LOCK.release()
 		
 	def select_room(arg):
 		room_name = my_list.value

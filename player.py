@@ -52,6 +52,8 @@ class Player:
 				x,y = getPos(tile[0],tile[1])
 				self.pieces.add(Piece(color, types.pop(), (x,y), tile[0], tile[1]))
 		else:
+			#for i in range(len(PIECE_TYPES)):
+				#self.pieces.add(Piece(color, PIECE_TYPES[i], (const.PIECE_START_X
 			self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 0)))
 			self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 1)))
 			self.pieces.add(Piece(color, '3', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 2)))

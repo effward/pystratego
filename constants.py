@@ -2,6 +2,9 @@ import threading
 from pygame.locals import *
 
 # Meta constants
+SERVER_JID_PATTERN = '%s@pystratego.andrew-win7'
+ROOM_JID_PATTERN = '%s@stratego.andrew-win7'
+LOBBY_JID = 'lobby@stratego.andrew-win7'
 USERS_FILE = 'users.txt'
 ROOMS_FILE = 'rooms.txt'
 MODECHANGE = USEREVENT
@@ -20,6 +23,7 @@ BOARD_OFFSET_X = (SCREEN_WIDTH - (TILE_SIZE * BOARD_SIZE)) / 2 + TILE_SIZE/2
 BOARD_OFFSET_Y = (SCREEN_HEIGHT - (TILE_SIZE * BOARD_SIZE)) / 2 + TILE_SIZE/2
 
 # Piece constants
+PIECE_TYPES = ['2','2','3','4','5','6','7','8','9','10','S','F','B']
 PIECE_SIZE = 40
 PIECE_START_X = BOARD_OFFSET_X - PIECE_SIZE
 PIECE_START_Y = BOARD_OFFSET_Y
