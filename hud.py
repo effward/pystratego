@@ -1,4 +1,4 @@
-import pygame, threading
+import pygame, threading, string
 from pgu import gui
 from tempfile import mkstemp
 from shutil import move
@@ -141,15 +141,31 @@ def load_game_lobby():
 	main.add(my_list, 250, 80)
 	
 	count = 1
+	
+	def clean_room_name(name):
+		print 'Dirty: ' + name
+		clean_name = ''
+		name = name.lower()
+		name_parts = name.split(' ')
+		for i in range(len(name_parts)):
+			for letter in name_parts[i]:
+				if letter in string.ascii_lowercase:
+					clean_name += letter
+			if i < len(name_parts)-1:
+				clean_name += '_'
+		print 'Cleaned: ' + clean_name
+		return clean_name
+			
 
 	def add_list_item(arg):
-		pygame.event.post(Event(NETWORK, msg='create_room', room=my_input.value))
-		my_list.add(my_input.value,value=my_input.value)
+		room_name = clean_room_name(my_input.value)
+		pygame.event.post(Event(NETWORK, msg='create_room', room=room_name))
+		my_list.add(room_name,value=room_name)
 		my_list.resize()
 		my_list.repaint()
 		FILE_LOCK.acquire()
 		rooms = open(ROOMS_FILE, 'a')
-		rooms.write(my_input.value)
+		rooms.write(room_name)
 		rooms.write('\n')
 		rooms.close()
 		FILE_LOCK.release()

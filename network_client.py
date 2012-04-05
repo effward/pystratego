@@ -26,6 +26,7 @@ class Client(ClientXMPP, threading.Thread):
 						
 		self.lobby = lobby
 		self.room = None
+		self.room_nick = None
 		self.nick = nick
 		self.get = get
 		self.target_jid = target_jid
@@ -134,13 +135,15 @@ class Client(ClientXMPP, threading.Thread):
 		
 				
 	def send_move(self, move_data):
-		#self.send_message(mto=
-		print 'Sending move!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+		turn, piece, x, y = move_data
+		body = 'MOVE:' + self.room_nick+ ':' + str(turn) + ':' + piece.color + ':' + piece.type + ':' + str(piece.x) + ':' + str(piece.y) + ':' + str(x) + ':' + str(y)
+		self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
 			
 		#logging.debug('sending message')
 		#self.send_message(mto='Admin@localhost', mbody='testing 123')
 		
 	def join_room(self, room_name):
+		self.room_nick = room_name
 		self.room = ROOM_JID_PATTERN % room_name
 		self.send_message(mto=SERVER_JID_PATTERN % room_name, mbody=('JOIN: ' + room_name), mtype='normal')
 		self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
@@ -154,11 +157,13 @@ class Client(ClientXMPP, threading.Thread):
 					room = body[1].strip()
 					result = body[2].strip()
 					if result == 'SUCCESS':
+						self.room_nick = room
 						self.room = ROOM_JID_PATTERN % room
 						self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
 						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=0))
 					else:
 						self.room = None
+						self.room_nick = None
 						pygame.event.post(Event(NETWORK, msg='failure', details='Failed to create room'))
 				if command == 'JOIN' and len(body) is 4:
 					room = body[1].strip()
@@ -169,9 +174,19 @@ class Client(ClientXMPP, threading.Thread):
 							
 			
 	def muc_message(self, msg):
+		print 'Recieved message from ' + msg['mucnick'] + ':' + msg['from'].bare
+		print msg['body']
 		if msg['mucnick'] != self.nick and self.nick in msg['body']:
 			print '********' + msg['from'].bare + '**************'
 			self.send_message(mto=msg['from'].bare, mbody="I heard that, %s." % msg['mucnick'], mtype='groupchat')
+		if msg['mucnick'] == 'Admin':
+			body = msg['body'].split(':')
+			if len(body) > 1:
+				command = body[0].strip()
+				if command == 'MOVE' and len(body) is 5:
+					pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
+				if command == 'MOVE' and len(body) is 7:
+					pygame.event.post(Event(NETWORK, msg='move_received', room=self.room, turn=body[1], color=body[2], x1=body[3], y1=body[4], x2=body[5], y2=body[6]))
 							  
 	def muc_online(self, presence):
 		if presence['muc']['nick'] != self.nick:

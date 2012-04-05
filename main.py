@@ -4,6 +4,7 @@ from pygame.locals import *
 from constants import *
 from helper import *
 from network_client import *
+from player import Player
 from pgu import gui
 from hud import *
 
@@ -31,27 +32,32 @@ def main():
 	players = []
 	#for i in ['red', 'red', 'red', 'red']:
 	#	players.append(player.Player(i))
-	players.append(player.Player(b, 'red', False))
-	players.append(player.Player(b, 'blue', False))
-	players.append(player.Player(b, 'dred', False))
-	players.append(player.Player(b, 'dblue', False))
 	myPlayer = 0
 	
 	running = 1
 	# 0 = pre-lobby, 1 = loading/lobby, 2 = server-select, 3 = loading/game, 4 = pre-game, 5 = game, 6 = post-game
 	mode = 0
-	turn = 0
+	turn = -1
 	haveSelected = False
 	selectedMoves = []
 	selected = None
 	turnPlayer = 0
+	moveLog = []
 	
 	hud = load_hud(mode)
 	
 	while running:
 		turnPlayer = turn % NUM_PLAYERS
+		# Mode change logic
+		if mode is 4:
+			readyToStart = True
+			for p in players:
+				readyToStart = readyToStart and p.ready()
+			if readyToStart:
+				pygame.event.post(Event(MODECHANGE, mode=5))
 		for event in pygame.event.get():
-			if event.type == QUIT: sys.exit()
+			if event.type == QUIT: 
+				sys.exit()
 			# Process Keyboard input
 			elif event.type == KEYDOWN:
 				if event.key == K_ESCAPE:
@@ -66,8 +72,40 @@ def main():
 					pygame.event.post(Event(MODECHANGE, mode=4, room=event.room, me=event.count))
 				elif event.msg == 'create_room':
 					client.event('create_room', event.room)
+				elif event.msg == 'placement_received':
+					if int(event.turn) is -1 and not(get_color_id(event.color) is myPlayer):
+						pieceMoved = False
+						for piece in players[get_color_id(event.color)].pieces:
+							if piece.off_board():
+								piece.move(int(event.x), int(event.y))
+								pieceMoved = True
+								break
+						if not(pieceMoved):
+							client.event('move_error', (2, "Received a placement after all pieces have been placed."))
+						
+				elif event.msg == 'move_received':
+					color_id = get_color_id(event.color)
+					if int(event.turn) is turn and not(color_id is myPlayer) and color_id is turnPlayer:
+						tileRect = b.tiles[int(event.x1)][int(event.y1)].rect
+						for piece in players[color_id].pieces:
+							moved = piece.click_check(tileRect)
+							if moved is not None:
+								moved.move(int(event.x2), int(event.y2))
+								turn += 1
+								turnPlayer = turn % NUM_PLAYERS
+						if moved is None:
+							client.event('move_error', (1, "Received a move for a piece that doesn't exist"))
+						else:
+							moved = None
 				elif event.msg == 'failure':
 					print event.details
+				else:
+					print '****************************************************************'
+					print '****************************************************************'
+					print 'Unexpected NETWORK message:'
+					print event.msg
+					print '****************************************************************'
+					print '****************************************************************'
 					#TODO: deal with network failures
 			# Check for mode changes
 			elif event.type == MODECHANGE:
@@ -81,7 +119,13 @@ def main():
 					client.event("join_room", room)
 				elif mode is 4:
 					myPlayer = int(event.me)
-					print "I'm player " + str(myPlayer)
+					for i in range(len(PLAYER_COLORS)):
+						if i == myPlayer:
+							players.append(Player(b, PLAYER_COLORS[i]))
+						else:
+							players.append(Player(b, PLAYER_COLORS[i], remote=True))
+				elif mode is 5:
+					turn = 0
 				hud.quit()
 				hud = load_hud(mode)
 				
@@ -96,7 +140,8 @@ def main():
 							for x,y in selectedMoves:
 								target = b.tiles[x][y].click_check(mouseRect)
 								if target is not None and selected is not None:
-									client.event('send_move', (turn, color, selected.x, selected.y, x, y))
+									#client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
+									client.event('send_move', (turn, selected, x, y))
 									selected.move(x,y)
 									# Turn off highlights
 									for x,y in selectedMoves:
@@ -143,12 +188,13 @@ def main():
 										b.tiles[x][y].swap_highlight()
 									break
 					elif mode is 5: #playing
-						if True: #turnPlayer is myPlayer:
+						if turnPlayer is myPlayer:
 							if haveSelected:
 								for x,y  in selectedMoves:
 									target = b.tiles[x][y].click_check(mouseRect)
 									if target is not None and selected is not None:
-										client.event('send_move', (turn, color, selected.x, selected.y, x, y))
+										#client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
+										client.event('send_move', (turn, selected, x, y))
 										selected.move(x,y)
 										haveSelected = False
 										turn += 1
@@ -209,16 +255,8 @@ def main():
 			for p in players:
 					p.pieces.draw(screen)
 		hud.paint()
-		screen.blit(titleImage, titleRect)
+		#screen.blit(titleImage, titleRect)
 					
 		pygame.display.flip()
-		
-		# Mode change logic
-		if mode is 4:
-			readyToStart = True
-			for p in players:
-				readyToStart = readyToStart and p.ready()
-			if readyToStart:
-				pygame.event.post(Event(MODECHANGE, mode=5))
 		
 if __name__ == '__main__': main()

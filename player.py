@@ -3,11 +3,14 @@ import constants as const
 from helper import *
 
 class Piece(pygame.sprite.Sprite):
-	def __init__(self, color, type, pos, x=-1, y=-1):
+	def __init__(self, color, type, x, y, server):
 		# Call Sprite initializer
-		pygame.sprite.Sprite.__init__(self)
-		self.image, self.rect = helper.load_image('piece_' + color + type + '.bmp', -1)
-		self.rect.center = pos
+		if server:
+			self.rect = pygame.Rect(0, 0, const.TILE_SIZE, const.TILE_SIZE)
+		else:
+			pygame.sprite.Sprite.__init__(self)
+			self.image, self.rect = helper.load_image('piece_' + color + type + '.bmp', -1)
+		self.rect.center = helper.getPos(x,y)
 		self.type = type
 		self.color = color
 		# Position on the board [0...14], -1 means pre-placement, -2 means captured
@@ -31,6 +34,12 @@ class Piece(pygame.sprite.Sprite):
 		self.y = y
 		self.rect.center = helper.getPos(x,y)
 		
+	def off_board(self):
+		if self.x < 0 or self.x >= BOARD_SIZE or self.y < 0 or self.y >= BOARD_SIZE:
+			return True
+		return False
+		
+	"""	
 	def update(self):
 		if self.x > 0 and self.y > 0:
 			targetPos =  (self.x * const.TILE_SIZE + const.BOARD_OFFSET_X, self.y * const.TILE_SIZE + const.BOARD_OFFSET_Y)
@@ -39,37 +48,67 @@ class Piece(pygame.sprite.Sprite):
 			else:
 				self.x_velocity = 0
 				self.y_velocity = 0
-			
+		"""
+		
 		
 class Player:
-	def __init__(self, b, color, randomize=False):
+	def __init__(self, b, color, remote=False, server=False):
 		self.color = color
-		self.pieces = pygame.sprite.Group()
 		self.board = b
-		if randomize:
-			types = ['2','2','3','4','5','6','7','8','9','10','S','F','B']
-			for tile in starting_tiles(color, b):
-				x,y = getPos(tile[0],tile[1])
-				self.pieces.add(Piece(color, types.pop(), (x,y), tile[0], tile[1]))
+		if server:
+			self.pieces = []
+			for i in range(len(PIECE_TYPES)):
+				if self.color == 'red':
+					self.pieces.append(Piece(color, PIECE_TYPES[i], i+1, BOARD_SIZE, server))
+				elif self.color == 'blue':
+					self.pieces.append(Piece(color, PIECE_TYPES[i], -1, i+1, server))
+				elif self.color == 'dred':
+					self.pieces.append(Piece(color, PIECE_TYPES[i], i+1, -1, server))
+				elif self.color == 'dblue':
+					self.pieces.append(Piece(color, PIECE_TYPES[i], BOARD_SIZE, i+1, server))
+
 		else:
-			#for i in range(len(PIECE_TYPES)):
-				#self.pieces.add(Piece(color, PIECE_TYPES[i], (const.PIECE_START_X
-			self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 0)))
-			self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 1)))
-			self.pieces.add(Piece(color, '3', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 2)))
-			self.pieces.add(Piece(color, '4', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 3)))
-			self.pieces.add(Piece(color, '5', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 4)))
-			self.pieces.add(Piece(color, '6', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 5)))
-			self.pieces.add(Piece(color, '7', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 6)))
-			self.pieces.add(Piece(color, '8', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 7)))
-			self.pieces.add(Piece(color, '9', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 8)))
-			self.pieces.add(Piece(color, '10', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 9)))
-			self.pieces.add(Piece(color, 'S', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 10)))
-			self.pieces.add(Piece(color, 'F', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 11)))
-			self.pieces.add(Piece(color, 'B', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 12)))
+			self.pieces = pygame.sprite.Group()
+			if remote:
+				type = 'U'
+				for i in range(len(PIECE_TYPES)):
+					if self.color == 'red':
+						self.pieces.add(Piece(color, type, 1, BOARD_SIZE, server))
+					elif self.color == 'blue':
+						self.pieces.add(Piece(color, type, -1, 1, server))
+					elif self.color == 'dred':
+						self.pieces.add(Piece(color, type, 1, -1, server))
+					elif self.color == 'dblue':
+						self.pieces.add(Piece(color, type, BOARD_SIZE, 1, server))
+			else:
+				for i in range(len(PIECE_TYPES)):
+					if self.color == 'red':
+						self.pieces.add(Piece(color, PIECE_TYPES[i], i+1, BOARD_SIZE, server))
+					elif self.color == 'blue':
+						self.pieces.add(Piece(color, PIECE_TYPES[i], -1, i+1, server))
+					elif self.color == 'dred':
+						self.pieces.add(Piece(color, PIECE_TYPES[i], i+1, -1, server))
+					elif self.color == 'dblue':
+						self.pieces.add(Piece(color, PIECE_TYPES[i], BOARD_SIZE, i+1, server))
+			"""
+		self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 0)))
+		self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 1)))
+		self.pieces.add(Piece(color, '3', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 2)))
+		self.pieces.add(Piece(color, '4', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 3)))
+		self.pieces.add(Piece(color, '5', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 4)))
+		self.pieces.add(Piece(color, '6', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 5)))
+		self.pieces.add(Piece(color, '7', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 6)))
+		self.pieces.add(Piece(color, '8', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 7)))
+		self.pieces.add(Piece(color, '9', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 8)))
+		self.pieces.add(Piece(color, '10', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 9)))
+		self.pieces.add(Piece(color, 'S', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 10)))
+		self.pieces.add(Piece(color, 'F', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 11)))
+		self.pieces.add(Piece(color, 'B', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 12)))
+		"""
+		
 	def ready(self):
 		for piece in self.pieces:
-			if piece.x is -1 or piece.y is -1:
+			if piece.off_board():
 				return False
 		return True
 			

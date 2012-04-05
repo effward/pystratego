@@ -30,7 +30,10 @@ PIECE_START_Y = BOARD_OFFSET_Y
 
 # Player constants
 NUM_PLAYERS = 4
+PLAYER_COLORS = ['red', 'blue', 'dred', 'dblue']
 
 # Threading
 CHAT_QUEUE_LOCK = threading.Lock()
+MOVE_QUEUE_LOCK = threading.Lock()
+MOVE_QUEUE = []
 FILE_LOCK = threading.Lock()

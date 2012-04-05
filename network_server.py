@@ -1,7 +1,9 @@
-import logging, sys, threading
+import logging, sys, threading, pygame
 
 from sleekxmpp.componentxmpp import ComponentXMPP
 from constants import *
+from pygame.event import Event
+from pygame.locals import *
 
 if sys.version_info < (3, 0):
     reload(sys)
@@ -37,6 +39,7 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 		self.add_event_handler("session_start", self.session_start)
 		self.add_event_handler("groupchat_message", self.muc_message)
 		self.add_event_handler("message", self.message)
+		self.add_event_handler("broadcast_move", self.broadcast_move)
 		
 		self.start()
 		
@@ -53,41 +56,25 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 		# Join the lobby
 		self['xep_0045'].joinMUC(self.lobby, self.nick, password='pystratego', wait=True, pfrom=SERVER_JID_PATTERN % 'lobby')
 		
-		# Create a new room and join it
-		#self['xep_0045'].joinMUC(self.room, self.nick, password='hello123', wait=True)
-		#self['xep_0045'].configureRoom(self.room)
-		"""
 		if self.get in self.info_types:
-			info = self['xep_0030'].get_info(jid=self.target_jid, node=self.target_node, block=True)
+			info = self['xep_0030'].get_info(jid=self.target_jid, node=self.target_node, block=True, ifrom=SERVER_JID_PATTERN % 'lobby')
 		if self.get in self.items_types:
-			items = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True)
+			items = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True, ifrom=SERVER_JID_PATTERN % 'lobby')
 		else:
 			logging.error("Invalid disco request type.")
 			self.disconnect()
 			return
 		
-		header = 'XMPP Service Discovery: %s' % self.target_jid
-		print(header)
-		print('-' * len(header))
-		if self.target_node != '':
-			print('Node: %s' % self.target_node)
-			print('-' * len(header))
-		
-		if self.get in self.identity_types:
-			print('Identities:')
-			for identity in info['disco_info']['identities']:
-				print('  - %s' % str(identity))
-
-		if self.get in self.feature_types:
-			print('Features:')
-			for feature in info['disco_info']['features']:
-				print('  - %s' % feature)
-
+		# Clean up left over rooms from crash, etc.
 		if self.get in self.items_types:
 			print('Items:')
 			for item in items['disco_items']['items']:
 				print('  - %s' % str(item))
-				"""
+				self['xep_0045'].destroy(item[0], ifrom=SERVER_JID_PATTERN % item[2])
+				
+	def broadcast_move(self, move_data):
+		room, body = move_data
+		self.send_message(mto=ROOM_JID_PATTERN % room, mbody=body, mtype='groupchat', mfrom=SERVER_JID_PATTERN % room)
 				
 	def muc_message(self, msg):
 		if msg['mucnick'] != self.nick and self.nick in msg['body']:
@@ -101,26 +88,31 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 		print self.rooms
 		self['xep_0045'].joinMUC(ROOM_JID_PATTERN % room, self.nick, wait=True, pfrom=SERVER_JID_PATTERN % room)
 		self['xep_0045'].configureRoom(ROOM_JID_PATTERN % room, ifrom=SERVER_JID_PATTERN % room)
+		pygame.event.post(Event(NETWORK, msg='create_game', game_name=room))
 	
-	def message(self, msg):
-		if msg['type'] in ('chat', 'normal'):
-			body = msg['body'].split(':')
+	def message(self, message):
+		if message['type'] in ('chat', 'normal'):
+			body = message['body'].split(':')
 			if len(body) > 1:
 				command = body[0].strip()
 				if command == 'CREATE':
 					room = body[1].strip()
-					self._create_room(room, msg['nick'])
-					msg.reply("CREATE: " + room + ": SUCCESS").send()
+					self._create_room(room, message['nick'])
+					message.reply("CREATE: " + room + ": SUCCESS").send()
 				if command == 'JOIN':
 					room = body[1].strip()
 					if room in self.rooms:
 						room_id = self.room_ids[room]
-						self.rooms[room].append((msg['nick'], room_id))
-						msg.reply("JOIN: " + room + ": SUCCESS: " + str(room_id)).send()
+						self.rooms[room].append((message['nick'], room_id))
+						message.reply("JOIN: " + room + ": SUCCESS: " + str(room_id)).send()
 						self.room_ids[room] = room_id + 1
 					else:
-						self._create_room(room, msg['nick'])
-						msg.reply("JOIN: " + room + ": SUCCESS: 0").send()
+						self._create_room(room, message['nick'])
+						message.reply("JOIN: " + room + ": SUCCESS: 0").send()
+				if command == 'MOVE':
+					room = body[1].strip()
+					print 'Recieved move command from: ' + message['from'].bare
+					pygame.event.post(Event(NETWORK, msg='check_move', game_name=room, jid=message['from'].bare, move=body[2:]))
 						
 						
 						
