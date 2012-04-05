@@ -1,6 +1,1 @@
-test
-ultimate
 new_game
-player
-_
-work

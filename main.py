@@ -4,7 +4,7 @@ from pygame.locals import *
 from constants import *
 from helper import *
 from network_client import *
-from player import Player
+from player import Player, Piece
 from pgu import gui
 from hud import *
 
@@ -41,6 +41,8 @@ def main():
 	haveSelected = False
 	selectedMoves = []
 	selected = None
+	moved = None
+	defender = None
 	turnPlayer = 0
 	moveLog = []
 	
@@ -82,21 +84,62 @@ def main():
 								break
 						if not(pieceMoved):
 							client.event('move_error', (2, "Received a placement after all pieces have been placed."))
-						
+				elif event.msg == 'combat_received':
+					if int(event.turn) is turn:
+						player_def = players[get_color_id(defender.color)]
+						player_atk = players[get_color_id(moved.color)]
+						if defender.type == 'U':
+							temp_piece = Piece(defender.color, event.defender_type, defender.x, defender.y, False)
+							player_def.pieces.remove(defender)
+							player_def.pieces.add(temp_piece)
+							defender = temp_piece
+						if moved.type == 'U':
+							temp_piece = Piece(moved.color, event.attacker_type, moved.x, moved.y, False)
+							player_atk.pieces.remove(moved)
+							player_atk.pieces.add(temp_piece)
+							moved = temp_piece
+						if event.winner == 'ATTACKER':
+							player_def.kill(defender, player_atk)
+						elif event.winner == 'DEFENDER':
+							player_atk.kill(moved, player_def)
+						defender = None
+						moved = None
+						turn += 1
+						turnPlayer = turn % NUM_PLAYERS			
 				elif event.msg == 'move_received':
 					color_id = get_color_id(event.color)
-					if int(event.turn) is turn and not(color_id is myPlayer) and color_id is turnPlayer:
-						tileRect = b.tiles[int(event.x1)][int(event.y1)].rect
+					if int(event.turn) is turn and color_id is turnPlayer:
+						if not(color_id is myPlayer):
+							tileRect = b.tiles[int(event.x1)][int(event.y1)].rect
+						else:
+							tileRect = b.tiles[int(event.x2)][int(event.y2)].rect
+						print tileRect
 						for piece in players[color_id].pieces:
+							print piece.rect
 							moved = piece.click_check(tileRect)
-							if moved is not None:
+							if moved is not None and not(color_id is myPlayer):
+								print moved.color + moved.type
 								moved.move(int(event.x2), int(event.y2))
-								turn += 1
-								turnPlayer = turn % NUM_PLAYERS
+								break
+							if moved is not None:
+								break
 						if moved is None:
 							client.event('move_error', (1, "Received a move for a piece that doesn't exist"))
 						else:
-							moved = None
+							combatOccurs = False
+							for player in players:
+								if not(event.color == player.color):
+									for piece in player.pieces:
+										defender = piece.click_check(moved.rect)
+										if defender is not None:
+											combatOccurs = True
+											break
+									if combatOccurs:
+										break
+							if not(combatOccurs):
+								turn += 1
+								turnPlayer = turn % NUM_PLAYERS
+								moved = None
 				elif event.msg == 'failure':
 					print event.details
 				else:
@@ -134,59 +177,60 @@ def main():
 				if event.button == 1:
 					mouseRect = pygame.Rect(event.pos[0] - 5, event.pos[1] - 5, 10, 10)
 					if mode is 4: #pre-game
-						# If a piece is selected 
-						if haveSelected:
-							# check if the player clicked one of the possible moves
-							for x,y in selectedMoves:
-								target = b.tiles[x][y].click_check(mouseRect)
-								if target is not None and selected is not None:
-									#client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
-									client.event('send_move', (turn, selected, x, y))
-									selected.move(x,y)
-									# Turn off highlights
-									for x,y in selectedMoves:
-										b.tiles[x][y].swap_highlight()
-									selectedMoves = []
-									haveSelected = False
-									selected = None
-									break
-							# If the player didn't click on a correct move
-							if target is None:
-								# Check if they clicked on one of their other pieces
-								for piece in players[myPlayer].pieces.sprites():
-									temp = piece.click_check(mouseRect)
-									# if so highlight moves for that piece
-									if temp is not None:
-										# If clicked selected piece, deselect it
-										if temp == selected:
-											haveSelected = False
-											selected = None
+						if myPlayer < NUM_PLAYERS:
+							# If a piece is selected 
+							if haveSelected:
+								# check if the player clicked one of the possible moves
+								for x,y in selectedMoves:
+									target = b.tiles[x][y].click_check(mouseRect)
+									if target is not None and selected is not None:
+										#client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
+										client.event('send_move', (turn, selected, selected.x, selected.y, x, y))
+										selected.move(x,y)
+										# Turn off highlights
+										for x,y in selectedMoves:
+											b.tiles[x][y].swap_highlight()
+										selectedMoves = []
+										haveSelected = False
+										selected = None
+										break
+								# If the player didn't click on a correct move
+								if target is None:
+									# Check if they clicked on one of their other pieces
+									for piece in players[myPlayer].pieces.sprites():
+										temp = piece.click_check(mouseRect)
+										# if so highlight moves for that piece
+										if temp is not None:
+											# If clicked selected piece, deselect it
+											if temp == selected:
+												haveSelected = False
+												selected = None
+												for x,y in selectedMoves:
+													b.tiles[x][y].swap_highlight()
+												break
+											haveSelected = True
+											selected = temp
+											for x,y in selectedMoves:
+												b.tiles[x][y].swap_highlight()
+											selectedMoves = starting_moves(selected, b, players)
 											for x,y in selectedMoves:
 												b.tiles[x][y].swap_highlight()
 											break
+							# If no piece is selected
+							else:
+								# Check if player clicked on a piece
+								for piece in players[myPlayer].pieces.sprites():
+									selected = piece.click_check(mouseRect)
+									# If so, highlight it's possible moves
+									if selected is not None:
 										haveSelected = True
-										selected = temp
+										target = None
 										for x,y in selectedMoves:
 											b.tiles[x][y].swap_highlight()
 										selectedMoves = starting_moves(selected, b, players)
 										for x,y in selectedMoves:
 											b.tiles[x][y].swap_highlight()
 										break
-						# If no piece is selected
-						else:
-							# Check if player clicked on a piece
-							for piece in players[myPlayer].pieces.sprites():
-								selected = piece.click_check(mouseRect)
-								# If so, highlight it's possible moves
-								if selected is not None:
-									haveSelected = True
-									target = None
-									for x,y in selectedMoves:
-										b.tiles[x][y].swap_highlight()
-									selectedMoves = starting_moves(selected, b, players)
-									for x,y in selectedMoves:
-										b.tiles[x][y].swap_highlight()
-									break
 					elif mode is 5: #playing
 						if turnPlayer is myPlayer:
 							if haveSelected:
@@ -194,12 +238,13 @@ def main():
 									target = b.tiles[x][y].click_check(mouseRect)
 									if target is not None and selected is not None:
 										#client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
-										client.event('send_move', (turn, selected, x, y))
+										client.event('send_move', (turn, selected, selected.x, selected.y, x, y))
 										selected.move(x,y)
 										haveSelected = False
-										turn += 1
+										#turn += 1
 										for x,y in selectedMoves:
 											b.tiles[x][y].swap_highlight()
+										"""
 										# Check if combat takes place
 										for i in range(len(players)):
 											if i is not turnPlayer:
@@ -212,6 +257,7 @@ def main():
 															selected.move(-1,-1)
 														else:
 															defender.move(-1,-1)
+															"""
 										selectedMoves = []
 										selected = None
 										break	
@@ -252,8 +298,10 @@ def main():
 			for p in players:
 				p.pieces.update()
 			b.draw(screen)
-			for p in players:
-					p.pieces.draw(screen)
+			for i in range(len(players)):
+				if i is not turnPlayer:
+					players[i].pieces.draw(screen)
+			players[turnPlayer].pieces.draw(screen)
 		hud.paint()
 		#screen.blit(titleImage, titleRect)
 					

@@ -13,21 +13,20 @@ def fight(attacker, defender):
 			return 0
 	except:
 		if attacker.type is 'B':
-			aType = -1
+			return 1
 		elif attacker.type is 'S':
-			aType = -2
+			if defender.type in ['F', 'S', '10']:
+				return 1
+			else:
+				return 0
 		elif attacker.type is 'F':
-			aType = -3
-		else:
-			aType = int(attacker.type)
+			return 0
 		if defender.type is 'B':
-			dType = -1
+			return 1
 		elif defender.type is 'S':
-			dType = -2
+			return 1
 		elif defender.type is 'F':
-			dType = -3
-		else:
-			dType = int(defender.type)
+			return 1
 		return 1
 
 
@@ -117,14 +116,34 @@ def possible_moves(selected, board, players):
 	if p is None:
 		print 'You are not a player in the game'
 		sys.exit()
+		
+	# Append the 4 basic move directions to the list of moves	
 	if board.is_legal(x-1, y) and not(is_occupied(p, board, x-1, y)):
-		moves.append((x-1,y))
+		if selected.type in ['B', 'F']:
+			if not(is_occupied_excluding(p, players, board, x-1, y)):
+				moves.append((x-1,y))
+		else:
+			moves.append((x-1,y))
 	if board.is_legal(x, y-1) and not(is_occupied(p, board, x, y-1)):
-		moves.append((x,y-1))
+		if selected.type in ['B', 'F']:
+			if not(is_occupied_excluding(p, players, board, x, y-1)):
+				moves.append((x,y-1))
+		else:
+			moves.append((x,y-1))
 	if board.is_legal(x+1, y) and not(is_occupied(p, board, x+1, y)):
-		moves.append((x+1,y))
-	if board.is_legal(x, y+1):
-		moves.append((x, y+1))
+		if selected.type in ['B', 'F']:
+			if not(is_occupied_excluding(p, players, board, x+1, y)):
+				moves.append((x+1,y))
+		else:
+			moves.append((x+1,y))
+	if board.is_legal(x, y+1) and not(is_occupied(p, board, x, y+1)):
+		if selected.type in ['B', 'F']:
+			if not(is_occupied_excluding(p, players, board, x, y+1)):
+				moves.append((x,y+1))
+		else:
+			moves.append((x,y+1))
+			
+	# Append special moves for 2's
 	if selected.type is '2':
 		if not(is_occupied_excluding(p, players, board, x+1, y)) and not(is_occupied(p, board, x+1,y)):
 			for i in range(x+2, BOARD_SIZE):
@@ -158,6 +177,8 @@ def possible_moves(selected, board, players):
 						break
 				else:
 					break
+					
+	# Append special moves for 6's
 	elif selected.type is '6':
 		extraMoves = []
 		for i,j in moves:
@@ -173,7 +194,46 @@ def possible_moves(selected, board, players):
 				extraMoves.append((i, j+1))
 		for move in extraMoves:
 			moves.append(move)
+			
+	# Append special moves for bombs
 	elif selected.type is 'B':
+		for i in range(x+1, x+4):
+			if not (board.is_legal(i,y) or board.is_legal_lake(i,y)):
+				break
+			if not(is_occupied_excluding(p, players, board, i, y)) and not(is_occupied(p, board, i,y)):
+				continue
+			elif is_occupied_excluding(p, players, board, i, y) and i == x+3:
+				moves.append((i,y))
+			else:
+					break
+		for i in range(x-1, x-4, -1):
+			if not(board.is_legal(i,y) or board.is_legal_lake(i,y)):
+				break
+			if not(is_occupied_excluding(p, players, board, i, y)) and not(is_occupied(p, board, i,y)):
+				continue
+			elif is_occupied_excluding(p, players, board, i, y) and i == x-3:
+				moves.append((i,y))
+			else:
+					break
+		for i in range(y+1, y+4):
+			if not(board.is_legal(x,i) or board.is_legal_lake(x,i)):
+				break
+			if not(is_occupied_excluding(p, players, board, x, i)) and not(is_occupied(p, board, x,i)):
+				continue
+			elif is_occupied_excluding(p, players, board, x, i) and i == y+3:
+				moves.append((x,i))
+			else:
+					break
+		for i in range(y-1, y-4, -1):
+			if not(board.is_legal(x,i) or board.is_legal_lake(x,i)):
+				break
+			if not(is_occupied_excluding(p, players, board, x, i)) and not(is_occupied(p, board, x,i)):
+				continue
+			elif is_occupied_excluding(p, players, board, x, i) and i == y-3:
+				moves.append((x,i))
+			else:
+					break
+		"""		
 		pos = [(x-3,y),(x+3,y),(x,y-3),(x,y+3)]
 		for i,j in pos:
 			if not board.is_legal(i,j):
@@ -185,6 +245,7 @@ def possible_moves(selected, board, players):
 						if piece.click_check(tileRect) is not None:
 							moves.append((i,j))
 							break
+							"""
 	# Remove any moves that would move onto friendly pieces
 	toRemove = []
 	for i,j in moves:

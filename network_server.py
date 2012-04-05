@@ -39,7 +39,8 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 		self.add_event_handler("session_start", self.session_start)
 		self.add_event_handler("groupchat_message", self.muc_message)
 		self.add_event_handler("message", self.message)
-		self.add_event_handler("broadcast_move", self.broadcast_move)
+		self.add_event_handler("broadcast", self.broadcast)
+		self.add_event_handler("send_move", self.send_move)
 		
 		self.start()
 		
@@ -72,9 +73,14 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 				print('  - %s' % str(item))
 				self['xep_0045'].destroy(item[0], ifrom=SERVER_JID_PATTERN % item[2])
 				
-	def broadcast_move(self, move_data):
+	def broadcast(self, move_data):
 		room, body = move_data
 		self.send_message(mto=ROOM_JID_PATTERN % room, mbody=body, mtype='groupchat', mfrom=SERVER_JID_PATTERN % room)
+		
+	def send_move(self, move_data):
+		room, jid, body = move_data
+		print 'sending message to: ' + jid
+		self.send_message(mto=jid, mbody=body, mtype='normal', mfrom=SERVER_JID_PATTERN % room)
 				
 	def muc_message(self, msg):
 		if msg['mucnick'] != self.nick and self.nick in msg['body']:
@@ -101,7 +107,10 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 					message.reply("CREATE: " + room + ": SUCCESS").send()
 				if command == 'JOIN':
 					room = body[1].strip()
-					if room in self.rooms:
+					if len(body) is 4 and body[2] == 'READY':
+						player_jid = message['from'].bare
+						pygame.event.post(Event(NETWORK, msg='player_joined', game_name=room, jid=player_jid, color_id=int(body[3])))
+					elif room in self.rooms:
 						room_id = self.room_ids[room]
 						self.rooms[room].append((message['nick'], room_id))
 						message.reply("JOIN: " + room + ": SUCCESS: " + str(room_id)).send()

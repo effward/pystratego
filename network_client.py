@@ -28,6 +28,7 @@ class Client(ClientXMPP, threading.Thread):
 		self.room = None
 		self.room_nick = None
 		self.nick = nick
+		self.room_id = -1
 		self.get = get
 		self.target_jid = target_jid
 		self.target_node = target_node
@@ -47,6 +48,7 @@ class Client(ClientXMPP, threading.Thread):
 		self.add_event_handler("join_room", self.join_room)
 		self.add_event_handler("get_rooms", self.get_rooms)
 		self.add_event_handler("create_room", self.create_room)
+		self.add_event_handler("move_error", self.move_error)
 		
 		# For use with OpenFire server
 		self.ssl_version = ssl.PROTOCOL_SSLv3
@@ -135,8 +137,8 @@ class Client(ClientXMPP, threading.Thread):
 		
 				
 	def send_move(self, move_data):
-		turn, piece, x, y = move_data
-		body = 'MOVE:' + self.room_nick+ ':' + str(turn) + ':' + piece.color + ':' + piece.type + ':' + str(piece.x) + ':' + str(piece.y) + ':' + str(x) + ':' + str(y)
+		turn, piece, x1, y1, x2, y2 = move_data
+		body = 'MOVE:' + self.room_nick+ ':' + str(turn) + ':' + piece.color + ':' + piece.type + ':' + str(x1) + ':' + str(y1) + ':' + str(x2) + ':' + str(y2)
 		self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
 			
 		#logging.debug('sending message')
@@ -159,8 +161,11 @@ class Client(ClientXMPP, threading.Thread):
 					if result == 'SUCCESS':
 						self.room_nick = room
 						self.room = ROOM_JID_PATTERN % room
+						self.room_id = 0
 						self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
 						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=0))
+						self.send_message(mto=SERVER_JID_PATTERN % room, mbody=('JOIN: ' + room + ':READY:' + str(self.room_id)), mtype='normal')
+
 					else:
 						self.room = None
 						self.room_nick = None
@@ -168,9 +173,12 @@ class Client(ClientXMPP, threading.Thread):
 				if command == 'JOIN' and len(body) is 4:
 					room = body[1].strip()
 					result = body[2].strip()
-					me = body[3].strip()
+					self.room_id = body[3].strip()
 					if result == 'SUCCESS':
-						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=me))
+						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=self.room_id))
+						self.send_message(mto=SERVER_JID_PATTERN % room, mbody=('JOIN: ' + room + ':READY:' + str(self.room_id)), mtype='normal')
+				if command == 'PLACEMENT':
+					pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
 							
 			
 	def muc_message(self, msg):
@@ -183,14 +191,19 @@ class Client(ClientXMPP, threading.Thread):
 			body = msg['body'].split(':')
 			if len(body) > 1:
 				command = body[0].strip()
-				if command == 'MOVE' and len(body) is 5:
+				if command == 'COMBAT' and len(body) is 5:
+					pygame.event.post(Event(NETWORK, msg='combat_received', room=self.room, turn=body[1], winner=body[2], attacker_type=body[3], defender_type=body[4]))
+				elif command == 'MOVE' and len(body) is 5:
 					pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
-				if command == 'MOVE' and len(body) is 7:
+				elif command == 'MOVE' and len(body) is 7:
 					pygame.event.post(Event(NETWORK, msg='move_received', room=self.room, turn=body[1], color=body[2], x1=body[3], y1=body[4], x2=body[5], y2=body[6]))
 							  
 	def muc_online(self, presence):
 		if presence['muc']['nick'] != self.nick:
 			self.send_message(mto=presence['from'].bare, mbody=("PLAYER: " + presence['muc']['nick'] + ":" + str(self.players)), mtype='groupchat')
 			
+	def move_error(self, err_info):
+		print 'Move Error'
+		print err_info
 		
 		

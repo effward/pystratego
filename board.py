@@ -70,3 +70,8 @@ class Board(pygame.sprite.Group):
 		if x < 0 or x >= BOARD_SIZE or y < 0 or y >= BOARD_SIZE:
 			return False
 		return self.tiles[x][y].type == '1'	
+		
+	def is_legal_lake(self, x, y):
+		if x < 0 or x >= BOARD_SIZE or y < 0 or y >= BOARD_SIZE:
+			return False
+		return self.tiles[x][y].type == '2'

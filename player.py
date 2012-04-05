@@ -19,6 +19,7 @@ class Piece(pygame.sprite.Sprite):
 		self.x_velocity = 0
 		self.y_velocity = 0
 		self.trapped = False
+		self.killed = False
 		
 	def click_check(self, mouseRect):
 		if mouseRect.colliderect(self.rect):
@@ -55,6 +56,7 @@ class Player:
 	def __init__(self, b, color, remote=False, server=False):
 		self.color = color
 		self.board = b
+		self.kills = 0
 		if server:
 			self.pieces = []
 			for i in range(len(PIECE_TYPES)):
@@ -111,4 +113,18 @@ class Player:
 			if piece.off_board():
 				return False
 		return True
-			
+		
+	def kill(self, piece, killer):
+		if not(piece.color == self.color):
+			print "Can only kill pieces belonging to this player"
+			return
+		piece.killed = True
+		if killer.color == 'red':
+			piece.move(killer.kills % BOARD_SIZE, BOARD_SIZE + (killer.kills / BOARD_SIZE))
+		elif killer.color == 'blue':
+			piece.move(-1 - (killer.kills / BOARD_SIZE), killer.kills % BOARD_SIZE)
+		elif killer.color == 'dred':
+			piece.move(killer.kills % BOARD_SIZE, -1 - (killer.kills / BOARD_SIZE))
+		elif killer.color == 'dblue':
+			piece.move(BOARD_SIZE + (killer.kills / BOARD_SIZE), killer.kills % BOARD_SIZE)
+		killer.kills += 1
