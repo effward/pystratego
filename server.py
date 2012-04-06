@@ -32,14 +32,14 @@ def check_move(game_name, move):
 	else:
 		turnPlayer = game.turn % NUM_PLAYERS
 		combat = None
-		#print 'turn: ' + str(turn) + '; game.turn: ' + str(game.turn) + '; color_id: ' + str(get_color_id(move[1])) + '; turnPlayer: ' + str(turnPlayer)
+		print 'turn: ' + str(turn) + '; game.turn: ' + str(game.turn) + '; color_id: ' + str(get_color_id(move[1])) + '; turnPlayer: ' + str(turnPlayer)
 		if turn is game.turn and get_color_id(move[1]) is turnPlayer:
 			for piece in game.players[get_color_id(move[1])].pieces:
-				#print 'move_type: ' + move[2] + '; piece.type: ' + piece.type + '; x: ' + move[3] + '; piece.x: ' + str(piece.x) + '; y: ' + move[4] + '; piece.y: ' + str(piece.y)
+				print 'move_type: ' + move[2] + '; piece.type: ' + piece.type + '; x: ' + move[3] + '; piece.x: ' + str(piece.x) + '; y: ' + move[4] + '; piece.y: ' + str(piece.y)
 				if piece.type == move[2] and piece.x is int(move[3]) and piece.y is int(move[4]):
 					selectedMoves = possible_moves(piece, game.board, game.players)
 					for x, y in selectedMoves:
-						#print 'move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
+						print 'move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
 						if x is int(move[5]) and y is int(move[6]):
 							piece.move(x,y)
 							print 'piece moved: move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
