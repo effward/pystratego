@@ -113,12 +113,9 @@ def main():
 							tileRect = b.tiles[int(event.x1)][int(event.y1)].rect
 						else:
 							tileRect = b.tiles[int(event.x2)][int(event.y2)].rect
-						print tileRect
 						for piece in players[color_id].pieces:
-							print piece.rect
 							moved = piece.click_check(tileRect)
 							if moved is not None and not(color_id is myPlayer):
-								print moved.color + moved.type
 								moved.move(int(event.x2), int(event.y2))
 								break
 							if moved is not None:

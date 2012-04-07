@@ -12,16 +12,16 @@ games = {}
 def check_move(game_name, move):
 	game = games[game_name]
 	turn = int(move[0])
-	print 'turn: ' + move[0]
+	#print 'turn: ' + move[0]
 	if turn is -1:
-		print 'player: ' + move[1]
+		#print 'player: ' + move[1]
 		for piece in game.players[get_color_id(move[1])].pieces:
-			print 'type: ' + move[2]
+			#print 'type: ' + move[2]
 			if piece.off_board() and piece.type == move[2]:
-				print 'pos: ' + move[5] + ', ' + move[6]
-				print str(piece.x) + ',' + str(piece.y)
+				#print 'pos: ' + move[5] + ', ' + move[6]
+				#print str(piece.x) + ',' + str(piece.y)
 				piece.move(int(move[5]), int(move[6]))
-				print str(piece.x) + ',' + str(piece.y)
+				#print str(piece.x) + ',' + str(piece.y)
 				body = 'MOVE:' + move[0] + ':' + move[1] + ':' + move[5] + ':' + move[6]
 				readyToStart = True
 				for p in game.players:
@@ -32,17 +32,18 @@ def check_move(game_name, move):
 	else:
 		turnPlayer = game.turn % NUM_PLAYERS
 		combat = None
-		print 'turn: ' + str(turn) + '; game.turn: ' + str(game.turn) + '; color_id: ' + str(get_color_id(move[1])) + '; turnPlayer: ' + str(turnPlayer)
+		#print 'turn: ' + str(turn) + '; game.turn: ' + str(game.turn) + '; color_id: ' + str(get_color_id(move[1])) + '; turnPlayer: ' + str(turnPlayer)
 		if turn is game.turn and get_color_id(move[1]) is turnPlayer:
 			for piece in game.players[get_color_id(move[1])].pieces:
-				print 'move_type: ' + move[2] + '; piece.type: ' + piece.type + '; x: ' + move[3] + '; piece.x: ' + str(piece.x) + '; y: ' + move[4] + '; piece.y: ' + str(piece.y)
+				#print 'move_type: ' + move[2] + '; piece.type: ' + piece.type + '; x: ' + move[3] + '; piece.x: ' + str(piece.x) + '; y: ' + move[4] + '; piece.y: ' + str(piece.y)
 				if piece.type == move[2] and piece.x is int(move[3]) and piece.y is int(move[4]):
 					selectedMoves = possible_moves(piece, game.board, game.players)
 					for x, y in selectedMoves:
-						print 'move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
+						#print selectedMoves
+						#print 'move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
 						if x is int(move[5]) and y is int(move[6]):
 							piece.move(x,y)
-							print 'piece moved: move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
+							#print 'piece moved: move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
 							body = 'MOVE:' + move[0] + ':' + move[1] + ':' + move[3] + ':' + move[4] + ':' + move[5] + ':' + move[6]
 							game.turn += 1
 							for player in game.players:
@@ -51,10 +52,14 @@ def check_move(game_name, move):
 										defender = p.click_check(piece.rect)
 										if defender is not None:
 											result = fight(piece, defender)
+											player_def = game.players[get_color_id(defender.color)]
+											player_atk = game.players[get_color_id(piece.color)]
 											if result is 1:
 												combat = 'COMBAT:' + move[0] + ':ATTACKER:' + piece.type + ':' + defender.type
+												player_def.kill(defender, player_atk)
 											else:
 												combat = 'COMBAT:' + move[0] + ':DEFENDER:' + piece.type + ':' + defender.type
+												player_atk.kill(piece, player_def)
 											break
 									if combat:
 										break
@@ -98,9 +103,9 @@ def main():
 						game = games[event.game_name]
 						for player in game.players:
 							for piece in player.pieces:
-								print 'Checking (' + str(piece.x) + ', ' + str(piece.y) + ')'
+								#print 'Checking (' + str(piece.x) + ', ' + str(piece.y) + ')'
 								if not(piece.off_board()):
-									print 'Sending piece'
+									#print 'Sending piece'
 									body = 'PLACEMENT:-1:' + piece.color + ':' + str(piece.x) + ':' + str(piece.y)
 									network.event('send_move', (event.game_name, event.jid, body))
 				else:

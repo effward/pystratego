@@ -136,11 +136,13 @@ def possible_moves(selected, board, players):
 				moves.append((x+1,y))
 		else:
 			moves.append((x+1,y))
+	print 'is_legal: ' + str(board.is_legal(x,y+1)) + ', is_occupied: ' + str(is_occupied(p, board, x, y+1))
 	if board.is_legal(x, y+1) and not(is_occupied(p, board, x, y+1)):
 		if selected.type in ['B', 'F']:
 			if not(is_occupied_excluding(p, players, board, x, y+1)):
 				moves.append((x,y+1))
 		else:
+			print 'Appending: (' + str(x) + ', ' + str(y+1) + ')'
 			moves.append((x,y+1))
 			
 	# Append special moves for 2's
@@ -179,6 +181,7 @@ def possible_moves(selected, board, players):
 					break
 					
 	# Append special moves for 6's
+	#TODO: DOUBLE CHECK
 	elif selected.type is '6':
 		extraMoves = []
 		for i,j in moves:
