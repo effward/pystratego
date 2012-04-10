@@ -45,6 +45,7 @@ def main():
 	defender = None
 	turnPlayer = 0
 	moveLog = []
+	ready = False
 	
 	hud = load_hud(mode)
 	
@@ -55,8 +56,14 @@ def main():
 			readyToStart = True
 			for p in players:
 				readyToStart = readyToStart and p.ready()
+				if p.color == players[myPlayer].color and not(ready) and p.ready():
+					ready = True
+					client.event('send_placement', p.pieces)
 			if readyToStart:
 				pygame.event.post(Event(MODECHANGE, mode=5))
+		if mode is 5:
+			if is_game_over(players):
+				pygame.event.post(Event(MODECHANGE, mode=6))
 		for event in pygame.event.get():
 			if event.type == QUIT: 
 				sys.exit()
@@ -164,6 +171,7 @@ def main():
 							players.append(Player(b, PLAYER_COLORS[i]))
 						else:
 							players.append(Player(b, PLAYER_COLORS[i], remote=True))
+					client.event('room_ready', event.room)
 				elif mode is 5:
 					turn = 0
 				hud.quit()
@@ -182,7 +190,7 @@ def main():
 									target = b.tiles[x][y].click_check(mouseRect)
 									if target is not None and selected is not None:
 										#client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
-										client.event('send_move', (turn, selected, selected.x, selected.y, x, y))
+										#client.event('send_move', (turn, selected, selected.x, selected.y, x, y))
 										selected.move(x,y)
 										# Turn off highlights
 										for x,y in selectedMoves:

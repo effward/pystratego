@@ -45,7 +45,9 @@ class Client(ClientXMPP, threading.Thread):
 		self.add_event_handler("groupchat_message", self.muc_message)
 		self.add_event_handler("message", self.message)
 		self.add_event_handler("send_move", self.send_move)
+		self.add_event_handler("send_placement", self.send_placement)
 		self.add_event_handler("join_room", self.join_room)
+		self.add_event_handler("room_ready", self.room_ready)
 		self.add_event_handler("get_rooms", self.get_rooms)
 		self.add_event_handler("create_room", self.create_room)
 		self.add_event_handler("move_error", self.move_error)
@@ -135,14 +137,17 @@ class Client(ClientXMPP, threading.Thread):
 			
 		pygame.event.post(Event(NETWORK, msg='got_rooms'))
 		
-				
 	def send_move(self, move_data):
 		turn, piece, x1, y1, x2, y2 = move_data
 		body = 'MOVE:' + self.room_nick+ ':' + str(turn) + ':' + piece.color + ':' + piece.type + ':' + str(x1) + ':' + str(y1) + ':' + str(x2) + ':' + str(y2)
 		self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
+		
+	def send_placement(self, pieces):
+		for piece in pieces:
+			self.send_move((-1, piece, piece.x, piece.y, piece.x, piece.y))
 			
-		#logging.debug('sending message')
-		#self.send_message(mto='Admin@localhost', mbody='testing 123')
+	def room_ready(self, room):
+		self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=('JOIN: ' + self.room_nick + ':READY:' + str(self.room_id)), mtype='normal')
 		
 	def join_room(self, room_name):
 		self.room_nick = room_name
@@ -176,7 +181,6 @@ class Client(ClientXMPP, threading.Thread):
 					self.room_id = body[3].strip()
 					if result == 'SUCCESS':
 						pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=self.room_id))
-						self.send_message(mto=SERVER_JID_PATTERN % room, mbody=('JOIN: ' + room + ':READY:' + str(self.room_id)), mtype='normal')
 				if command == 'PLACEMENT':
 					pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
 							
@@ -194,7 +198,7 @@ class Client(ClientXMPP, threading.Thread):
 				if command == 'COMBAT' and len(body) is 5:
 					pygame.event.post(Event(NETWORK, msg='combat_received', room=self.room, turn=body[1], winner=body[2], attacker_type=body[3], defender_type=body[4]))
 				elif command == 'MOVE' and len(body) is 5:
-					pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
+					pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1].strip(), color=body[2].strip(), x=body[3], y=body[4]))
 				elif command == 'MOVE' and len(body) is 7:
 					pygame.event.post(Event(NETWORK, msg='move_received', room=self.room, turn=body[1], color=body[2], x1=body[3], y1=body[4], x2=body[5], y2=body[6]))
 							  

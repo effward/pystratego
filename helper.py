@@ -2,6 +2,22 @@ import pygame, os, sys
 from pygame.locals import *
 from constants import *
 
+# Determines if the game is over
+def is_game_over(players):
+	flag_pos = []
+	pieces_disabled = []
+	for i in range(NUM_PLAYERS):
+		pieces_disabled[i] = True
+	for i in range(len(players)):
+		player = players[i]
+		for piece in player.pieces:
+			if piece.type == 'F':
+				flag_pos.append((piece.x, piece.y))
+			elif not(piece.killed):
+				pieces_disabled[i] = False
+	return False
+			
+
 # Determines the outcome of combat between the pieces attacker and defender
 def fight(attacker, defender):
 	try:
