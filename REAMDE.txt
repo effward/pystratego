@@ -1,4 +1,6 @@
-/////////////////////////////////////////////////
-You should go pick up Neal Stephenson's latest book REAMDE if you haven't read it yet. If you haven't heard of Neal Stephenson, you should go to the library and take out Snow Crash, Diamond Age, and Anathem right now.
-/////////////////////////////////////////////////
+Currently just the basic backbone of the game. 4 players with the right pieces that take turns moving (all currently on the same screen). There are currently several problems that I am working on such as pieces not capturing each other correctly (numbered capturing other numbered works correctly, but the bomb/spy/flag pieces are wonky)
+
+TODO:
+Highest priority is networking so that you can play against other people and to avoid the problems associated with having multiple players on one screen. There is no point in developing the game until I know how the networking is going to work.
+Check out the networking branch, I'm trying out sleekXMPP.
 
