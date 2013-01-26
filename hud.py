@@ -26,34 +26,6 @@ def load_pre_lobby():
     main.add(gui.Label("Select User", cls="h1"), 20, 20)
 
 
-<<<<<<< HEAD
-	my_input = gui.Input(value='New User', size=12)
-	main.add(my_input, 40,80)
-	my_list = gui.List(width=150, height=100)
-	main.add(my_list, 250, 80)
-	
-	count = 1
-
-	# TODO: open file using with-as statement
-	def remove_list_item(arg):
-		v = my_list.value
-		if v:
-			item = v
-			my_list.remove(item)
-			my_list.resize()
-			my_list.repaint()
-		fh, abs_path = mkstemp()
-		new_users = open(abs_path, 'w')
-		users = open(USERS_FILE)
-		for line in users:
-			if line and not(line.strip()  == v):
-				new_users.write(line)
-		new_users.close()
-		close(fh)
-		users.close()
-		remove(USERS_FILE)
-		move(abs_path, USERS_FILE)
-=======
     my_input = gui.Input(value='New User', size=12)
     main.add(my_input, 40,80)
     my_list = gui.List(width=150, height=100)
@@ -79,7 +51,6 @@ def load_pre_lobby():
         users.close()
         remove(USERS_FILE)
         move(abs_path, USERS_FILE)
->>>>>>> d3745d589b976a376e61a0e4bcdab019552f04ac
 
     def add_list_item(arg):
         my_list.add(my_input.value,value=my_input.value)
