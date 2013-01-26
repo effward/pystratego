@@ -120,6 +120,7 @@ class Client(ClientXMPP, threading.Thread):
 		self.players += 1"""
 		self.send_message(mto=SERVER_JID_PATTERN % room_name, mbody=('CREATE: ' + room_name), mtype='normal')
 				
+	# TODO: open file using with-as statement
 	def get_rooms(self, event):
 		#self.update_roster('stratego.andrew-win7')
 		rooms = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True)

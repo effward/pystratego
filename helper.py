@@ -121,6 +121,7 @@ def is_occupied_excluding(p, players, b, x, y):
 
 # Finds all possible moves for the selected piece
 # TODO: bombs can jump over units, should need a straight shot
+# TODO: Check movement over lakes
 def possible_moves(selected, board, players):
 	moves = []
 	x = selected.x
@@ -215,6 +216,7 @@ def possible_moves(selected, board, players):
 			moves.append(move)
 			
 	# Append special moves for bombs
+	# TODO: Bombs should be able to shoot over lakes?
 	elif selected.type is 'B':
 		for i in range(x+1, x+4):
 			if not (board.is_legal(i,y) or board.is_legal_lake(i,y)):
@@ -266,6 +268,7 @@ def possible_moves(selected, board, players):
 							break
 							"""
 	# Remove any moves that would move onto friendly pieces
+	# TODO: Shouldn't need this if all the other checks are correct
 	toRemove = []
 	for i,j in moves:
 		tileRect = board.tiles[i][j].rect

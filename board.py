@@ -5,6 +5,7 @@ from constants import *
 class BoardTile(pygame.sprite.Sprite):
 	def __init__(self, type, pos, server):
 		# Call Sprite initializer
+		# TODO: move sprite initializer into else block
 		pygame.sprite.Sprite.__init__(self)
 		if server:
 			self.rect = pygame.Rect(0, 0, TILE_SIZE, TILE_SIZE)
@@ -40,6 +41,7 @@ class Board(pygame.sprite.Group):
 		for x in range(const.BOARD_SIZE):
 			tempList = []
 			for y in range(const.BOARD_SIZE):
+				# TODO: use getPos instead
 				tempPos =   x*const.TILE_SIZE + const.BOARD_OFFSET_X, y*const.TILE_SIZE + const.BOARD_OFFSET_Y
 				# Out of bounds tiles
 				if ((x < 3 or x > 11) and y < 4) or \

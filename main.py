@@ -61,9 +61,9 @@ def main():
 					client.event('send_placement', p.pieces)
 			if readyToStart:
 				pygame.event.post(Event(MODECHANGE, mode=5))
-		if mode is 5:
-			if is_game_over(players):
-				pygame.event.post(Event(MODECHANGE, mode=6))
+		#if mode is 5:
+			#if is_game_over(players):
+				#pygame.event.post(Event(MODECHANGE, mode=6))
 		for event in pygame.event.get():
 			if event.type == QUIT: 
 				sys.exit()
@@ -158,7 +158,7 @@ def main():
 			elif event.type == MODECHANGE:
 				mode = event.mode
 				if mode is 1: # loading screen
-					jid = event.nick + '@andrew-win7'
+					jid = event.nick + '@127.0.0.1'
 					print jid
 					client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
 				elif mode is 3:

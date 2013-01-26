@@ -32,7 +32,8 @@ def load_pre_lobby():
 	main.add(my_list, 250, 80)
 	
 	count = 1
-	
+
+	# TODO: open file using with-as statement
 	def remove_list_item(arg):
 		v = my_list.value
 		if v:

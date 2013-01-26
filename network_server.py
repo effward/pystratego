@@ -122,28 +122,4 @@ class EchoComponent (ComponentXMPP, threading.Thread):
 					room = body[1].strip()
 					print 'Recieved move command from: ' + message['from'].bare
 					pygame.event.post(Event(NETWORK, msg='check_move', game_name=room, jid=message['from'].bare, move=body[2:]))
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
+										

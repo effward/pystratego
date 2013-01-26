@@ -74,7 +74,7 @@ def main():
 	#screen = pygame.display.set_mode(SCREEN_SIZE)
 	#pygame.display.set_caption('pyStratego Server')
 	
-	network = EchoComponent('pystratego.andrew-win7', 'hello123', 'andrew-win7', '5275', 'lobby@stratego.andrew-win7', 'Admin', 'stratego.andrew-win7', get='all')
+	network = EchoComponent('pystratego', 'hello123', '127.0.0.1', '5275', 'lobby@stratego.andrew-win7', 'Admin', 'stratego.andrew-win7', get='all')
 	print("Done")
 	while 1:
 		# TODO: Add threads that service the event queue to deal with multiple connections at once
