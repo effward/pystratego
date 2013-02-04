@@ -166,7 +166,8 @@ def main():
             elif event.type == MODECHANGE:
                 mode = event.mode
                 if mode is 1: # loading screen
-                    jid = event.nick + '@andrew-win7'
+                    #jid = event.nick + '@andrew-win7'
+		    jid = event.nick + '@192.168.1.7'
                     print jid
                     client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
                 elif mode is 3:

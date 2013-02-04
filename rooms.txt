@@ -1,2 +1,2 @@
+new_ga
 new_game
-test
