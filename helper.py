@@ -210,7 +210,7 @@ def possible_moves(selected, board, players):
             if not(is_occupied_excluding(p, players, board, x, y+1)):
                 moves.append((x,y+1))
         else:
-            print 'Appending: (' + str(x) + ', ' + str(y+1) + ')'
+            #print 'Appending: (' + str(x) + ', ' + str(y+1) + ')'
             moves.append((x,y+1))
             
     # Append special moves for 2's
