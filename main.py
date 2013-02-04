@@ -53,8 +53,8 @@ def main():
         turnPlayer = turn % NUM_PLAYERS
         # Mode change logic
         if mode is 4:
-            if not ready:
-                players[myPlayer].random_start(b)
+            #if not ready:
+                #players[myPlayer].random_start(b)
             if players[myPlayer].ready():
                 ready = True
                 client.event('send_placement', players[myPlayer].pieces)
@@ -71,6 +71,8 @@ def main():
                 pygame.event.post(Event(MODECHANGE, mode=7, winner=result))
         for event in pygame.event.get():
             if event.type == QUIT: 
+                if client:
+                    client.event('disconnect', None)
                 sys.exit()
             # Process Keyboard input
             elif event.type == KEYDOWN:
@@ -220,12 +222,14 @@ def main():
                                         # if so highlight moves for that piece
                                         if temp is not None:
                                             # If clicked selected piece, deselect it
+                                            """
                                             if temp == selected:
                                                 haveSelected = False
                                                 selected = None
                                                 for x,y in selectedMoves:
                                                     b.tiles[x][y].swap_highlight()
                                                 break
+                                            """
                                             haveSelected = True
                                             selected = temp
                                             for x,y in selectedMoves:

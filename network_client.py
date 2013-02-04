@@ -35,7 +35,7 @@ class Client(ClientXMPP, threading.Thread):
         self.players = 0
         self.ready = False
         
-        # Values to control which disco entities are reported
+        # Values to control which discovery entities are reported
         self.info_types = ['', 'all', 'info', 'identities', 'features']
         self.identity_types = ['', 'all', 'info', 'identities']
         self.feature_types = ['', 'all', 'info', 'features']
@@ -52,6 +52,7 @@ class Client(ClientXMPP, threading.Thread):
         self.add_event_handler("get_rooms", self.get_rooms)
         self.add_event_handler("create_room", self.create_room)
         self.add_event_handler("move_error", self.move_error)
+        self.add_event_handler("disconnect", self.session_end)
         
         # For use with OpenFire server
         self.ssl_version = ssl.PROTOCOL_SSLv3
@@ -110,6 +111,9 @@ class Client(ClientXMPP, threading.Thread):
                 print('  - %s' % str(item))
                 
         pygame.event.post(Event(NETWORK, msg='connected'))
+        
+    def session_end(self, event):
+        self.disconnect(wait=True)
         
     def create_room(self, room_name):
         """self.room = room_name
