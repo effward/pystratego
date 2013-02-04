@@ -209,12 +209,12 @@ def possible_moves(selected, board, players):
             if not(is_occupied_excluding(p, players, board, x, y+1)):
                 moves.append((x,y+1))
         else:
-            print 'Appending: (' + str(x) + ', ' + str(y+1) + ')'
+            #print 'Appending: (' + str(x) + ', ' + str(y+1) + ')'
             moves.append((x,y+1))
             
     # Append special moves for 2's
     if selected.type is '2':
-        if not(is_occupied_excluding(p, players, board, x+1, y)) and not(is_occupied(p, board, x+1,y, players)) and board.is_legal(x+1, y):
+        if board.is_legal(x+1, y) and not(is_occupied_excluding(p, players, board, x+1, y)) and not(is_occupied(p, board, x+1,y, players)):
             for i in range(x+2, BOARD_SIZE):
                 if board.is_legal(i, y) and not(is_occupied(p, board, i, y, players)):
                     moves.append((i,y))
@@ -222,7 +222,7 @@ def possible_moves(selected, board, players):
                         break
                 else:
                     break
-        if not(is_occupied_excluding(p, players, board, x-1, y)) and not(is_occupied(p, board,x-1, y, players)) and board.is_legal(x-1, y):
+        if board.is_legal(x-1, y) and not(is_occupied_excluding(p, players, board, x-1, y)) and not(is_occupied(p, board,x-1, y, players)):
             for i in range(x-2, -1, -1):
                 if board.is_legal(i,y) and not(is_occupied(p, board, i, y, players)):
                     moves.append((i,y))
@@ -230,7 +230,7 @@ def possible_moves(selected, board, players):
                         break
                 else:
                     break
-        if not(is_occupied_excluding(p, players, board, x, y+1)) and not(is_occupied(p, board, x, y+1, players)) and board.is_legal(x, y+1):
+        if board.is_legal(x, y+1) and not(is_occupied_excluding(p, players, board, x, y+1)) and not(is_occupied(p, board, x, y+1, players)):
             for i in range(y+2, BOARD_SIZE):
                 if board.is_legal(x,i) and not(is_occupied(p, board, x, i, players)):
                     moves.append((x,i))
@@ -238,7 +238,7 @@ def possible_moves(selected, board, players):
                         break
                 else:
                     break
-        if not(is_occupied_excluding(p, players, board, x, y-1)) and not(is_occupied(p, board, x, y-1, players)) and board.is_legal(x, y-1):
+        if board.is_legal(x, y-1) and not(is_occupied_excluding(p, players, board, x, y-1)) and not(is_occupied(p, board, x, y-1, players)):
             for i in range(y-2, -1, -1):
                 if board.is_legal(x,i) and not(is_occupied(p, board, x, i, players)):
                     moves.append((x,i))
@@ -346,6 +346,20 @@ def get_color_id(color):
     if color == 'dblue':
         return 3
     
+def render_nick(font, nick, color):
+    if color in ['red', 'dred']:
+        nick_text = font.render(nick, 1, (90, 10, 10))
+    if color in ['blue', 'dblue']:
+        nick_text = font.render(nick, 1, (10, 10, 90))
+    if color == 'red':
+        nick_pos = nick_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT - (BOARD_OFFSET_Y - 65)))
+    elif color == 'blue':
+        nick_pos = nick_text.get_rect(right=BOARD_OFFSET_X - 60, centery=SCREEN_HEIGHT/2)
+    elif color == 'dred':
+        nick_pos = nick_text.get_rect(center=(SCREEN_WIDTH/2, BOARD_OFFSET_Y - 65))
+    elif color == 'dblue':
+        nick_pos = nick_text.get_rect(left=SCREEN_WIDTH - (BOARD_OFFSET_X - 60), centery=SCREEN_HEIGHT/2)
+    return nick_text, nick_pos
 
 # Loads image with file name: file_name, if colorkey is specified
 # all pixels that are the same color as the specified colorkey will be

@@ -11,6 +11,7 @@ from hud import *
 def main():
     pygame.init()
     random.seed()
+    font = pygame.font.Font(None, 36)
     
 
     client = None #Client('test@andrew-win7', 'hello123', 'test1@stratego.andrew-win7', 'testing123', 'stratego.andrew-win7', get='all')
@@ -27,10 +28,11 @@ def main():
     screen.blit(titleImage, titleRect)
     
     b = board.Board()
-    players = []
+    players = None
     #for i in ['red', 'red', 'red', 'red']:
     #    players.append(player.Player(i))
     myPlayer = 0
+    myNick = None
     
     running = 1
     # 0 = pre-lobby, 1 = loading/lobby, 2 = server-select, 3 = loading/game, 4 = pre-game, 5 = waiting for players, 6 = game, 7 = post-game
@@ -71,6 +73,12 @@ def main():
                 pygame.event.post(Event(MODECHANGE, mode=7, winner=result))
         for event in pygame.event.get():
             if event.type == QUIT: 
+                hud.quit()
+                hud = load_quitting_game_hud()
+                hud.paint()
+                pygame.display.flip()
+                if client:
+                    client.event('disconnect', None)
                 sys.exit()
             # Process Keyboard input
             elif event.type == KEYDOWN:
@@ -86,6 +94,11 @@ def main():
                     pygame.event.post(Event(MODECHANGE, mode=4, room=event.room, me=event.count))
                 elif event.msg == 'create_room':
                     client.event('create_room', event.room)
+                elif event.msg == 'nick_received':
+                    nick_text, nick_pos = render_nick(font, event.nick, event.color)
+                    players[get_color_id(event.color)].nick = nick_text
+                    players[get_color_id(event.color)].nickpos = nick_pos
+                    players[get_color_id(event.color)].nick_plain = event.nick
                 elif event.msg == 'placement_received':
                     if int(event.turn) is -1 and not(get_color_id(event.color) is myPlayer):
                         pieceMoved = False
@@ -167,23 +180,47 @@ def main():
                 mode = event.mode
                 if mode is 1: # loading screen
                     #jid = event.nick + '@andrew-win7'
-		    jid = event.nick + '@192.168.1.7'
+                    jid = event.nick + '@67.255.21.127'
+                    myNick = event.nick
                     print jid
                     client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
+                elif mode is 2:
+                    if players:
+                        b = board.Board()
+                        players = None
+                        myPlayer = 0
+                        turn = -1
+                        haveSelected = False
+                        selectedMoves = []
+                        selected = None
+                        moved = None
+                        defender = None
+                        turnPlayer = 0
+                        moveLog = []
+                        ready = False
+                        marker = None
+                        move_sending = False
                 elif mode is 3:
                     room = event.room
                     client.event("join_room", room)
                 elif mode is 4:
                     myPlayer = int(event.me)
+                    players = []
                     for i in range(len(PLAYER_COLORS)):
                         if i == myPlayer:
                             players.append(Player(b, PLAYER_COLORS[i]))
+                            nick_text, nick_pos = render_nick(font, myNick, PLAYER_COLORS[i])
+                            players[i].nick = nick_text
+                            players[i].nickpos = nick_pos
+                            players[i].nick_plain = myNick
                         else:
                             players.append(Player(b, PLAYER_COLORS[i], remote=True))
                     client.event('room_ready', event.room)
                     marker = turnmarker.TurnMarker()
                 elif mode is 6:
                     turn = 0
+                elif mode is 8:
+                    client.event('leave_room')
                 if mode is 7:
                     hud.quit()
                     hud = load_hud(mode, event.winner)
@@ -221,12 +258,14 @@ def main():
                                         # if so highlight moves for that piece
                                         if temp is not None:
                                             # If clicked selected piece, deselect it
+                                            """
                                             if temp == selected:
                                                 haveSelected = False
                                                 selected = None
                                                 for x,y in selectedMoves:
                                                     b.tiles[x][y].swap_highlight()
                                                 break
+                                            """
                                             haveSelected = True
                                             selected = temp
                                             for x,y in selectedMoves:
@@ -324,10 +363,14 @@ def main():
             if mode in [6,7]:
                 marker.update()
             b.draw(screen)
-            for i in range(len(players)):
-                if i is not turnPlayer:
-                    players[i].pieces.draw(screen)
-            players[turnPlayer].pieces.draw(screen)
+            for p in players:
+                p.pieces.draw(screen)
+                if p.nick:
+                    screen.blit(p.nick, p.nickpos)
+            #for i in range(len(players)):
+                #if i is not turnPlayer:
+                    #players[i].pieces.draw(screen)
+            #players[turnPlayer].pieces.draw(screen)
             if mode in [6,7]:
                 marker.draw(screen)
         hud.paint()

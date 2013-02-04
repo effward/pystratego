@@ -35,7 +35,7 @@ class Client(ClientXMPP, threading.Thread):
         self.players = 0
         self.ready = False
         
-        # Values to control which disco entities are reported
+        # Values to control which discovery entities are reported
         self.info_types = ['', 'all', 'info', 'identities', 'features']
         self.identity_types = ['', 'all', 'info', 'identities']
         self.feature_types = ['', 'all', 'info', 'features']
@@ -48,10 +48,12 @@ class Client(ClientXMPP, threading.Thread):
         self.add_event_handler("send_move", self.send_move)
         self.add_event_handler("send_placement", self.send_placement)
         self.add_event_handler("join_room", self.join_room)
+        self.add_event_handler("leave_room", self.leave_room)
         self.add_event_handler("room_ready", self.room_ready)
         self.add_event_handler("get_rooms", self.get_rooms)
         self.add_event_handler("create_room", self.create_room)
         self.add_event_handler("move_error", self.move_error)
+        self.add_event_handler("disconnect", self.session_end)
         
         # For use with OpenFire server
         self.ssl_version = ssl.PROTOCOL_SSLv3
@@ -111,6 +113,9 @@ class Client(ClientXMPP, threading.Thread):
                 
         pygame.event.post(Event(NETWORK, msg='connected'))
         
+    def session_end(self, event):
+        self.disconnect(wait=True)
+        
     def create_room(self, room_name):
         """self.room = room_name
         self.players = 0
@@ -156,6 +161,12 @@ class Client(ClientXMPP, threading.Thread):
         self.room = ROOM_JID_PATTERN % room_name
         self.send_message(mto=SERVER_JID_PATTERN % room_name, mbody=('JOIN: ' + room_name), mtype='normal')
         self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+        
+    def leave_room(self, room_name):
+        self['xep_0045'].leaveMUC(self.room, self.nick)
+        self.room_nick = None
+        self.room = None
+        pygame.event.post(Event(NETWORK, msg='connected'))
             
     def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
@@ -170,6 +181,8 @@ class Client(ClientXMPP, threading.Thread):
                         self.room = ROOM_JID_PATTERN % room
                         self.room_id = 0
                         self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+                        body = 'NICK:' + self.room_nick + ':' + str(self.room_id) + ':' + self.nick
+                        self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
                         pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=0))
                         #self.send_message(mto=SERVER_JID_PATTERN % room, mbody=('JOIN: ' + room + ':READY:' + str(self.room_id)), mtype='normal')
 
@@ -182,6 +195,8 @@ class Client(ClientXMPP, threading.Thread):
                     result = body[2].strip()
                     self.room_id = body[3].strip()
                     if result == 'SUCCESS':
+                        body = 'NICK:' + self.room_nick + ':' + self.room_id + ':' + self.nick
+                        self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
                         pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=self.room_id))
                 if command == 'PLACEMENT':
                     pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
@@ -203,6 +218,8 @@ class Client(ClientXMPP, threading.Thread):
                     pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1].strip(), color=body[2].strip(), x=body[3], y=body[4]))
                 elif command == 'MOVE' and len(body) is 7:
                     pygame.event.post(Event(NETWORK, msg='move_received', room=self.room, turn=body[1], color=body[2], x1=body[3], y1=body[4], x2=body[5], y2=body[6]))
+                elif command == 'NICK' and len(body) is 3:
+                    pygame.event.post(Event(NETWORK, msg='nick_received', color=body[1], nick=body[2]))
                               
     def muc_online(self, presence):
         if presence['muc']['nick'] != self.nick:
