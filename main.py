@@ -27,7 +27,7 @@ def main():
     screen.blit(titleImage, titleRect)
     
     b = board.Board()
-    players = []
+    players = None
     #for i in ['red', 'red', 'red', 'red']:
     #    players.append(player.Player(i))
     myPlayer = 0
@@ -53,8 +53,8 @@ def main():
         turnPlayer = turn % NUM_PLAYERS
         # Mode change logic
         if mode is 4:
-            #if not ready:
-                #players[myPlayer].random_start(b)
+            if not ready:
+                players[myPlayer].random_start(b)
             if players[myPlayer].ready():
                 ready = True
                 client.event('send_placement', players[myPlayer].pieces)
@@ -171,11 +171,28 @@ def main():
                     jid = event.nick + '@andrew-win7'
                     print jid
                     client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
+                elif mode is 2:
+                    if players:
+                        b = board.Board()
+                        players = None
+                        myPlayer = 0
+                        turn = -1
+                        haveSelected = False
+                        selectedMoves = []
+                        selected = None
+                        moved = None
+                        defender = None
+                        turnPlayer = 0
+                        moveLog = []
+                        ready = False
+                        marker = None
+                        move_sending = False
                 elif mode is 3:
                     room = event.room
                     client.event("join_room", room)
                 elif mode is 4:
                     myPlayer = int(event.me)
+                    players = []
                     for i in range(len(PLAYER_COLORS)):
                         if i == myPlayer:
                             players.append(Player(b, PLAYER_COLORS[i]))
@@ -185,6 +202,8 @@ def main():
                     marker = turnmarker.TurnMarker()
                 elif mode is 6:
                     turn = 0
+                elif mode is 8:
+                    client.event('leave_room')
                 if mode is 7:
                     hud.quit()
                     hud = load_hud(mode, event.winner)

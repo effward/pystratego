@@ -48,6 +48,7 @@ class Client(ClientXMPP, threading.Thread):
         self.add_event_handler("send_move", self.send_move)
         self.add_event_handler("send_placement", self.send_placement)
         self.add_event_handler("join_room", self.join_room)
+        self.add_event_handler("leave_room", self.leave_room)
         self.add_event_handler("room_ready", self.room_ready)
         self.add_event_handler("get_rooms", self.get_rooms)
         self.add_event_handler("create_room", self.create_room)
@@ -160,6 +161,12 @@ class Client(ClientXMPP, threading.Thread):
         self.room = ROOM_JID_PATTERN % room_name
         self.send_message(mto=SERVER_JID_PATTERN % room_name, mbody=('JOIN: ' + room_name), mtype='normal')
         self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+        
+    def leave_room(self, room_name):
+        self['xep_0045'].leaveMUC(self.room, self.nick)
+        self.room_nick = None
+        self.room = None
+        pygame.event.post(Event(NETWORK, msg='connected'))
             
     def message(self, msg):
         if msg['type'] in ('chat', 'normal'):

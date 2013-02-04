@@ -174,6 +174,9 @@ def load_game_lobby():
         room_name = my_list.value
         if room_name:
             pygame.event.post(Event(MODECHANGE, mode=3, room=room_name))
+            
+    def refresh_rooms(arg):
+        pygame.event.post(Event(NETWORK, msg='connected'))
         
     FILE_LOCK.acquire()
     rooms = open(ROOMS_FILE, 'r')
@@ -191,6 +194,10 @@ def load_game_lobby():
     b = gui.Button("Select", width=150)
     main.add(b, 250, 200)
     b.connect(gui.CLICK, select_room, None)
+    
+    b = gui.Button("Refresh", width=150)
+    main.add(b, 250, 250)
+    b.connect(gui.CLICK, refresh_rooms, None)
     
     menu.init(main)
     
@@ -244,7 +251,14 @@ def load_post_game_hud(result):
     
     main = gui.Container(width=1280, height=720)
     win_str = result + " Team wins!"
-    main.add(gui.Label(win_str, cls="h1"), 20, 20)
+    main.add(gui.Label(win_str, cls="h1"), 20, 40)
+    
+    def back_to_lobby(arg):
+        pygame.event.post(Event(MODECHANGE, mode=8))
+    
+    b = gui.Button("Back to Lobby", width=150)
+    main.add(b, 20, 100)
+    b.connect(gui.CLICK, back_to_lobby, None)
     
     hud.init(main)
     return hud
