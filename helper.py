@@ -172,7 +172,6 @@ def is_occupied_enemy(p, players, b, x, y):
     return False
 
 # Finds all possible moves for the selected piece
-# TODO: bombs can jump over units, should need a straight shot
 def possible_moves(selected, board, players):
     moves = []
     x = selected.x
@@ -249,7 +248,6 @@ def possible_moves(selected, board, players):
                     break
                     
     # Append special moves for 6's
-    #TODO: DOUBLE CHECK
     elif selected.type is '6':
         extraMoves = []
         for i,j in moves:

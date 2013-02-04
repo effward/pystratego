@@ -130,20 +130,3 @@ class EchoComponent (ComponentXMPP, threading.Thread):
                         
                         
                         
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
