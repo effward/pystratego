@@ -181,6 +181,8 @@ class Client(ClientXMPP, threading.Thread):
                         self.room = ROOM_JID_PATTERN % room
                         self.room_id = 0
                         self['xep_0045'].joinMUC(self.room, self.nick, wait=True)
+                        body = 'NICK:' + self.room_nick + ':' + str(self.room_id) + ':' + self.nick
+                        self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
                         pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=0))
                         #self.send_message(mto=SERVER_JID_PATTERN % room, mbody=('JOIN: ' + room + ':READY:' + str(self.room_id)), mtype='normal')
 
@@ -193,6 +195,8 @@ class Client(ClientXMPP, threading.Thread):
                     result = body[2].strip()
                     self.room_id = body[3].strip()
                     if result == 'SUCCESS':
+                        body = 'NICK:' + self.room_nick + ':' + self.room_id + ':' + self.nick
+                        self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
                         pygame.event.post(Event(NETWORK, msg='joined_room', room=self.room, count=self.room_id))
                 if command == 'PLACEMENT':
                     pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1], color=body[2], x=body[3], y=body[4]))
@@ -214,6 +218,8 @@ class Client(ClientXMPP, threading.Thread):
                     pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1].strip(), color=body[2].strip(), x=body[3], y=body[4]))
                 elif command == 'MOVE' and len(body) is 7:
                     pygame.event.post(Event(NETWORK, msg='move_received', room=self.room, turn=body[1], color=body[2], x1=body[3], y1=body[4], x2=body[5], y2=body[6]))
+                elif command == 'NICK' and len(body) is 3:
+                    pygame.event.post(Event(NETWORK, msg='nick_received', color=body[1], nick=body[2]))
                               
     def muc_online(self, presence):
         if presence['muc']['nick'] != self.nick:

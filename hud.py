@@ -121,7 +121,7 @@ def load_loading_screen():
     
     main = gui.Container(width=500, height=400)
     
-    main.add(gui.Label("Finding Available Servers...", cls="h1"), 100, 100)
+    main.add(gui.Label("Finding Available Games...", cls="h1"), 100, 100)
     
     screen.init(main)
     return screen
@@ -196,7 +196,7 @@ def load_game_lobby():
     b.connect(gui.CLICK, select_room, None)
     
     b = gui.Button("Refresh", width=150)
-    main.add(b, 250, 250)
+    main.add(b, 250, 225)
     b.connect(gui.CLICK, refresh_rooms, None)
     
     menu.init(main)
@@ -259,6 +259,16 @@ def load_post_game_hud(result):
     b = gui.Button("Back to Lobby", width=150)
     main.add(b, 20, 100)
     b.connect(gui.CLICK, back_to_lobby, None)
+    
+    hud.init(main)
+    return hud
+    
+def load_quitting_game_hud():
+    hud = gui.App()
+    hud.connect(gui.QUIT, hud.quit, None)
+    
+    main = gui.Container(width=1280, height=720)
+    main.add(gui.Label("Quitting Game...", cls="h1"), 100, 100)
     
     hud.init(main)
     return hud

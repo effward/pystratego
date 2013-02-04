@@ -122,6 +122,8 @@ class EchoComponent (ComponentXMPP, threading.Thread):
                     room = body[1].strip()
                     print 'Recieved move command from: ' + message['from'].bare
                     pygame.event.post(Event(NETWORK, msg='check_move', game_name=room, jid=message['from'].bare, move=body[2:]))
+                if command == 'NICK':
+                    pygame.event.post(Event(NETWORK, msg='nick_received', game=body[1], id=body[2], nick=body[3]))
                         
                         
                         

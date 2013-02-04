@@ -98,6 +98,14 @@ def main():
                             if gameReady:
                             """
                             if len(pls) is 52:
+                                for player in games[event.game_name].players:
+                                    print '**************************'
+                                    print 'SENDING NICK'
+                                    print player.color
+                                    print player.nick_plain
+                                    print '**************************'
+                                    msg = 'NICK:' + player.color + ':' + player.nick_plain
+                                    network.event('broadcast', (event.game_name, msg))
                                 for placement in placements[event.game_name]:
                                     network.event('broadcast', (event.game_name, placement))
                         else:
@@ -112,11 +120,15 @@ def main():
                         network.event('broadcast', (event.game_name, combat))
                 elif event.msg == 'create_game':
                     games[event.game_name] = Game(event.game_name)
+                elif event.msg == 'nick_received':
+                    if event.game in games:
+                        games[event.game].players[int(event.id)].nick_plain = event.nick
                 elif event.msg == 'player_joined':
                     print 'New player joined ' + event.game_name
                     #if event.game_name in games:
                         #print 'Game found, updating player ' + str(event.color_id)
                         #game = games[event.game_name]
+                        #game.players[event.color_id].nick_plain = event.nick
                         #for player in game.players:
                             #for piece in player.pieces:
                                 #print 'Checking (' + str(piece.x) + ', ' + str(piece.y) + ')'

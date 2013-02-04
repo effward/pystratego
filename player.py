@@ -62,6 +62,9 @@ class Player:
         self.color = color
         self.board = b
         self.kills = 0
+        self.nick = None
+        self.nickpos = None
+        self.nick_plain = ''
         if server:
             self.pieces = []
             for i in range(len(PIECE_TYPES)):
