@@ -11,13 +11,15 @@ from hud import *
 def main():
     pygame.init()
     random.seed()
-    font = pygame.font.Font(None, 36)
+    font = pygame.font.Font("freesansbold.ttf", 24)
     
 
     client = None #Client('test@andrew-win7', 'hello123', 'test1@stratego.andrew-win7', 'testing123', 'stratego.andrew-win7', get='all')
     
     
     screen = pygame.display.set_mode(SCREEN_SIZE)
+    #screen = pygame.display.set_mode(SCREEN_SIZE, pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
+    #screen = pygame.display.set_mode((1,1))
     pygame.display.set_caption('pyStratego')
     
     # Free to use texture from http://www.designbash.com/wp-content/uploads/2010/01/wood-table-texture-2.jpg
@@ -83,7 +85,7 @@ def main():
             # Process Keyboard input
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
-                    running = 0
+                    pygame.event.post(Event(QUIT))
             # Check for network events:
             elif event.type == NETWORK:
                 if event.msg == 'connected':

@@ -143,7 +143,7 @@ def load_game_lobby():
     count = 1
     
     def clean_room_name(name):
-        print 'Dirty: ' + name
+        #print 'Dirty: ' + name
         clean_name = ''
         name = name.lower()
         name_parts = name.split(' ')
@@ -153,7 +153,7 @@ def load_game_lobby():
                     clean_name += letter
             if i < len(name_parts)-1:
                 clean_name += '_'
-        print 'Cleaned: ' + clean_name
+        #print 'Cleaned: ' + clean_name
         return clean_name
             
 

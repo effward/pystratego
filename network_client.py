@@ -16,13 +16,12 @@ class Client(ClientXMPP, threading.Thread):
         ClientXMPP.__init__(self, jid, password, sasl_mech='ANONYMOUS')
         threading.Thread.__init__(self)
         
-        logging.basicConfig(level=logging.DEBUG,
+        logging.basicConfig(level=logging.ERROR,
                         format='%(levelname)-8s %(message)s')
                         
         self.register_plugin('xep_0030') # Service Discovery
-        self.register_plugin('old_0004')
         self.register_plugin('xep_0045') # Multi-User Chat
-        self.register_plugin('xep_0199') # XMPP Ping
+        #self.register_plugin('xep_0199') # XMPP Ping
                         
         self.lobby = lobby
         self.room = None
@@ -64,7 +63,7 @@ class Client(ClientXMPP, threading.Thread):
     def run(self):
         if self.connect():
             self.process(block=True)
-            print("done")
+            #print("done")
         else:
             print("Unable to Connect.")
         
@@ -80,15 +79,16 @@ class Client(ClientXMPP, threading.Thread):
         #self['xep_0045'].joinMUC(self.room, self.nick, password='hello123', wait=True)
         #self['xep_0045'].configureRoom(self.room)
         
-        if self.get in self.info_types:
-            info = self['xep_0030'].get_info(jid=self.target_jid, node=self.target_node, block=True)
-        if self.get in self.items_types:
-            items = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True)
-        else:
-            logging.error("Invalid disco request type.")
-            self.disconnect()
-            return
+        #if self.get in self.info_types:
+            #info = self['xep_0030'].get_info(jid=self.target_jid, node=self.target_node, block=True)
+        #if self.get in self.items_types:
+            #items = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True)
+        #else:
+            #logging.error("Invalid disco request type.")
+            #self.disconnect()
+            #return
         
+        """
         header = 'XMPP Service Discovery: %s' % self.target_jid
         print(header)
         print('-' * len(header))
@@ -110,7 +110,7 @@ class Client(ClientXMPP, threading.Thread):
             print('Items:')
             for item in items['disco_items']['items']:
                 print('  - %s' % str(item))
-                
+             """   
         pygame.event.post(Event(NETWORK, msg='connected'))
         
     def session_end(self, event):
@@ -129,13 +129,13 @@ class Client(ClientXMPP, threading.Thread):
     def get_rooms(self, event):
         #self.update_roster('stratego.andrew-win7')
         rooms = self['xep_0030'].get_items(jid=self.target_jid, node=self.target_node, block=True)
-        print 'Rooms:'
+        #print 'Rooms:'
         FILE_LOCK.acquire()
         remove(ROOMS_FILE)
         f = open(ROOMS_FILE, 'w')
         for room in rooms['disco_items']['items']:
             name = room[0].split('@')[0]
-            print (' - %s' % name)
+            #print (' - %s' % name)
             f.write(name)
             f.write('\n')
         f.close()
@@ -203,11 +203,11 @@ class Client(ClientXMPP, threading.Thread):
                             
             
     def muc_message(self, msg):
-        print 'Recieved message from ' + msg['mucnick'] + ':' + msg['from'].bare
-        print msg['body']
-        if msg['mucnick'] != self.nick and self.nick in msg['body']:
-            print '********' + msg['from'].bare + '**************'
-            self.send_message(mto=msg['from'].bare, mbody="I heard that, %s." % msg['mucnick'], mtype='groupchat')
+        #print 'Recieved message from ' + msg['mucnick'] + ':' + msg['from'].bare
+        #print msg['body']
+        #if msg['mucnick'] != self.nick and self.nick in msg['body']:
+            #print '********' + msg['from'].bare + '**************'
+            #self.send_message(mto=msg['from'].bare, mbody="I heard that, %s." % msg['mucnick'], mtype='groupchat')
         if msg['mucnick'] == 'Admin':
             body = msg['body'].split(':')
             if self.ready and len(body) > 1:
