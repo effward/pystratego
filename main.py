@@ -57,12 +57,13 @@ def main():
         turnPlayer = turn % NUM_PLAYERS
         # Mode change logic
         if mode is 4:
-            if not ready:
-                players[myPlayer].random_start(b)
-            if players[myPlayer].ready():
-                ready = True
-                client.event('send_placement', players[myPlayer].pieces)
-                pygame.event.post(Event(MODECHANGE, mode=5))
+            if myPlayer < NUM_PLAYERS:
+                if not ready:
+                    players[myPlayer].random_start(b)
+                if players[myPlayer].ready():
+                    ready = True
+                    client.event('send_placement', players[myPlayer].pieces)
+                    pygame.event.post(Event(MODECHANGE, mode=5))
         if mode is 5:
             readyToStart = True
             for p in players:
@@ -96,11 +97,20 @@ def main():
                     pygame.event.post(Event(MODECHANGE, mode=4, room=event.room, me=event.count))
                 elif event.msg == 'create_room':
                     client.event('create_room', event.room)
+                elif event.msg == 'add_ai':
+                    client.event('add_ai')
                 elif event.msg == 'nick_received':
                     nick_text, nick_pos = render_nick(font, event.nick, event.color)
                     players[get_color_id(event.color)].nick = nick_text
                     players[get_color_id(event.color)].nickpos = nick_pos
                     players[get_color_id(event.color)].nick_plain = event.nick
+                elif event.msg == 'skip_turn':
+                    if int(event.turn) is turn:
+                        turn += 1
+                        turnPlayer = turn % NUM_PLAYERS
+                        moved = None
+                        marker.move(turnPlayer)
+                        move_sending = False
                 elif event.msg == 'placement_received':
                     if int(event.turn) is -1 and not(get_color_id(event.color) is myPlayer):
                         pieceMoved = False
@@ -134,6 +144,7 @@ def main():
                         turn += 1
                         turnPlayer = turn % NUM_PLAYERS
                         marker.move(turnPlayer)
+                        move_sending = False
                 elif event.msg == 'move_received':
                     color_id = get_color_id(event.color)
                     if int(event.turn) is turn and color_id is turnPlayer:

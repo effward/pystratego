@@ -1,4 +1,5 @@
-import pygame, helper, random
+import pygame, helper, random, board
+from pygame.event import Event
 from helper import *
 from constants import *
 
@@ -25,6 +26,7 @@ class Piece(pygame.sprite.Sprite):
         self.y_velocity = 0
         self.trapped = False
         self.killed = False
+        self.server = server
         
     def click_check(self, mouseRect):
         if mouseRect.colliderect(self.rect):
@@ -36,8 +38,12 @@ class Piece(pygame.sprite.Sprite):
         #x2,y2 = helper.getPos(x,y)
         #self.x_velocity = (x2 - x1) / 100
         #self.y_velocity = (y2 - y1) / 100
+        if self.type == '2':
+            print "Before: " + str(self.x) + ' ' + str(self.y)
         self.x = x
         self.y = y
+        if self.type == '2':
+            print "Moving piece: " + self.color + ' ' + self.type + ' ' + str(self.x) + ' ' + str(self.y)
         self.rect.center = helper.getPos(x,y)
         
     def off_board(self):
@@ -56,15 +62,17 @@ class Piece(pygame.sprite.Sprite):
                 self.y_velocity = 0
         """
         
-        
+
 class Player:
-    def __init__(self, b, color, remote=False, server=False):
+    def __init__(self, b, color, remote=False, server=False, ai=False):
         self.color = color
-        self.board = b
+        #self.board = b
         self.kills = 0
         self.nick = None
         self.nickpos = None
         self.nick_plain = ''
+        self.is_ai = ai
+        self.server = server
         if server:
             self.pieces = []
             for i in range(len(PIECE_TYPES)):
@@ -126,6 +134,8 @@ class Player:
     def ready(self):
         for piece in self.pieces:
             if piece.off_board():
+                if self.server:
+                    print 'Piece: ' + piece.color + ' ' + piece.type + ' (' + str(piece.x) + ', ' + str(piece.y) + ')'
                 return False
         return True
         
@@ -148,3 +158,53 @@ class Player:
             elif killer.color == 'dblue':
                 piece.move(BOARD_SIZE + (killer.kills / BOARD_SIZE), killer.kills % BOARD_SIZE)
             killer.kills += 1
+            
+            
+class AIPlayer(Player):
+    def __init__(self, b, color, game_name, gui):
+        self.game_name = game_name
+        self.gui = gui
+        if gui:
+            Player.__init__(self, b, color, server=False, ai=True)
+        else:
+            Player.__init__(self, b, color, server=True, ai=True)
+        self.nick_plain = 'pyStratego Bot #' + str(random.randint(0, 10000))
+        self.start(b)
+        
+    def start(self, b):
+        moves = []
+        for piece in self.pieces:
+            avail_moves = starting_moves(piece, b, self)
+            x,y = avail_moves[random.randint(0, len(avail_moves)-1)]
+            piece.move(x,y)
+            move = ['-1', piece.color, piece.type, str(-1), str(-1), str(x), str(y)]
+            moves.append(move)
+        for piece in self.pieces:
+            piece.move(-1, -1)
+        for move in moves:
+            pygame.event.post(Event(NETWORK, msg='check_move', game_name=self.game_name, move=move))
+            
+    def move(self, b, players, turn):
+        moves = []
+        if self.gui:
+            for k in range(10000):
+                n = random.randint(0, len(self.pieces)-1)
+                for idx,piece in enumerate(iter(self.pieces)):
+                    if idx is n:
+                        break
+                if not(piece.killed or piece.trapped):
+                    moves = possible_moves(piece, b, players)
+                    if len(moves) > 0:
+                        break
+        else:
+            for k in range(10000):
+                piece = self.pieces[random.randint(0, len(self.pieces)-1)]
+                if not(piece.killed or piece.trapped):
+                    moves = possible_moves(piece, b, players)
+                    if len(moves) > 0:
+                        break
+        if len(moves) > 0:
+            x,y = moves[random.randint(0, len(moves)-1)]
+            move = [str(turn), piece.color, piece.type, str(piece.x), str(piece.y), str(x), str(y)]
+            pygame.event.post(Event(NETWORK, msg='check_move', game_name=self.game_name, move=move))
+        

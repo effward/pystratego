@@ -124,6 +124,9 @@ class EchoComponent (ComponentXMPP, threading.Thread):
                     pygame.event.post(Event(NETWORK, msg='check_move', game_name=room, jid=message['from'].bare, move=body[2:]))
                 if command == 'NICK':
                     pygame.event.post(Event(NETWORK, msg='nick_received', game=body[1], id=body[2], nick=body[3]))
+                if command == 'AI':
+                    pygame.event.post(Event(NETWORK, msg='add_ai', game_name=body[1], id=self.room_ids[body[1]]))
+                    self.room_ids[body[1]] = self.room_ids[body[1]] + 1
                         
                         
                         

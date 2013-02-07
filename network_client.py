@@ -16,7 +16,7 @@ class Client(ClientXMPP, threading.Thread):
         ClientXMPP.__init__(self, jid, password, sasl_mech='ANONYMOUS')
         threading.Thread.__init__(self)
         
-        logging.basicConfig(level=logging.ERROR,
+        logging.basicConfig(level=logging.DEBUG,
                         format='%(levelname)-8s %(message)s')
                         
         self.register_plugin('xep_0030') # Service Discovery
@@ -53,6 +53,7 @@ class Client(ClientXMPP, threading.Thread):
         self.add_event_handler("create_room", self.create_room)
         self.add_event_handler("move_error", self.move_error)
         self.add_event_handler("disconnect", self.session_end)
+        self.add_event_handler("add_ai", self.add_ai)
         
         # For use with OpenFire server
         self.ssl_version = ssl.PROTOCOL_SSLv3
@@ -143,6 +144,10 @@ class Client(ClientXMPP, threading.Thread):
             
         pygame.event.post(Event(NETWORK, msg='got_rooms'))
         
+    def add_ai(self, event):
+        body = 'AI:' + self.room_nick
+        self.send_message(mto=SERVER_JID_PATTERN % self.room_nick, mbody=body, mtype='normal')
+        
     def send_move(self, move_data):
         turn, piece, x1, y1, x2, y2 = move_data
         body = 'MOVE:' + self.room_nick+ ':' + str(turn) + ':' + piece.color + ':' + piece.type + ':' + str(x1) + ':' + str(y1) + ':' + str(x2) + ':' + str(y2)
@@ -218,6 +223,8 @@ class Client(ClientXMPP, threading.Thread):
                     pygame.event.post(Event(NETWORK, msg='placement_received', room=self.room, turn=body[1].strip(), color=body[2].strip(), x=body[3], y=body[4]))
                 elif command == 'MOVE' and len(body) is 7:
                     pygame.event.post(Event(NETWORK, msg='move_received', room=self.room, turn=body[1], color=body[2], x1=body[3], y1=body[4], x2=body[5], y2=body[6]))
+                elif command == 'MOVE' and len(body) is 3:
+                    pygame.event.post(Event(NETWORK, msg='skip_turn', room=self.room, turn=body[1]))
                 elif command == 'NICK' and len(body) is 3:
                     pygame.event.post(Event(NETWORK, msg='nick_received', color=body[1], nick=body[2]))
                               

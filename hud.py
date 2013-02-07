@@ -126,7 +126,7 @@ def load_loading_screen():
     screen.init(main)
     return screen
     
-def load_game_lobby():
+def load_game_lobby(server=False, games=[]):
     menu = gui.App()
     menu.connect(gui.QUIT,menu.quit,None)
     
@@ -134,12 +134,9 @@ def load_game_lobby():
     
     main.add(gui.Label("Select Game", cls="h1"), 20, 20)
 
-
-    my_input = gui.Input(value='New Game', size=12)
-    main.add(my_input, 40,80)
     my_list = gui.List(width=150, height=100)
     main.add(my_list, 250, 80)
-    
+
     count = 1
     
     def clean_room_name(name):
@@ -173,23 +170,38 @@ def load_game_lobby():
     def select_room(arg):
         room_name = my_list.value
         if room_name:
-            pygame.event.post(Event(MODECHANGE, mode=3, room=room_name))
+            if server:
+                pygame.event.post(Event(MODECHANGE, mode=1, room=room_name))
+            else:
+                pygame.event.post(Event(MODECHANGE, mode=3, room=room_name))
             
     def refresh_rooms(arg):
-        pygame.event.post(Event(NETWORK, msg='connected'))
+        if server:
+            pygame.event.post(Event(MODECHANGE, mode=0))
+        else:
+            pygame.event.post(Event(NETWORK, msg='connected'))
+        #my_list.clear()
         
-    FILE_LOCK.acquire()
-    rooms = open(ROOMS_FILE, 'r')
-    for line in rooms:
-        room = line.strip()
-        if room:
-            my_list.add(room, value=room)
-    rooms.close()
-    FILE_LOCK.release()
+    #refresh_rooms(None)
     
-    b = gui.Button("Create New Game", width=150)
-    main.add(b, 40, 110)
-    b.connect(gui.CLICK, add_list_item, None)
+    if server:
+        for game in games:
+            my_list.add(game, value=game)
+    else:
+        FILE_LOCK.acquire()
+        rooms = open(ROOMS_FILE, 'r')
+        for line in rooms:
+            room = line.strip()
+            if room:
+                my_list.add(room, value=room)
+        rooms.close()
+        FILE_LOCK.release()
+    
+        my_input = gui.Input(value='New Game', size=12)
+        main.add(my_input, 40,80)
+        b = gui.Button("Create New Game", width=150)
+        main.add(b, 40, 110)
+        b.connect(gui.CLICK, add_list_item, None)
     
     b = gui.Button("Select", width=150)
     main.add(b, 250, 200)
@@ -222,6 +234,13 @@ def load_pre_game_hud():
     
     main.add(gui.Label("Choose Your Positions", cls="h1"), 20, 20)
     
+    def add_ai_player(arg):
+        pygame.event.post(Event(NETWORK, msg='add_ai'))
+    
+    b = gui.Button("Add AI-Controlled Bot", width=150)
+    main.add(b, 20, 50)
+    b.connect(gui.CLICK, add_ai_player, None)
+    
     hud.init(main)
     return hud
     
@@ -233,14 +252,29 @@ def load_waiting_hud():
     
     main.add(gui.Label("Waiting for other players...", cls="h1"), 20, 20)
     
+    def add_ai_player(arg):
+        pygame.event.post(Event(NETWORK, msg='add_ai'))
+    
+    b = gui.Button("Add AI-Controlled Bot", width=150)
+    main.add(b, 20, 50)
+    b.connect(gui.CLICK, add_ai_player, None)
+    
     hud.init(main)
     return hud
     
-def load_game_hud():
+def load_game_hud(server=False):
     hud = gui.App()
     hud.connect(gui.QUIT, hud.quit, None)
     
     main = gui.Container(width=1280, height=720)
+    
+    if server:
+        def back_to_lobby(arg):
+            pygame.event.post(Event(MODECHANGE, mode=0))
+        
+        b = gui.Button("Back to Lobby", width=150)
+        main.add(b, 20, 100)
+        b.connect(gui.CLICK, back_to_lobby, None)
     
     hud.init(main)
     return hud
@@ -274,6 +308,7 @@ def load_quitting_game_hud():
     return hud
     
 def load_hud(mode, text=None):
+    print "loading hud " + str(mode)
     if mode is 0:
         return load_pre_lobby()
     elif mode is 1:
@@ -291,3 +326,12 @@ def load_hud(mode, text=None):
         return load_game_hud()
     elif mode is 7:
         return load_post_game_hud(text)
+    elif mode is 8:
+        return load_loading_screen()
+        
+def load_server_hud(mode, text=None, games=[]):
+    print "loading server hud " + str(mode)
+    if mode is 0:
+        return load_game_lobby(server=True, games=games)
+    if mode is 1:
+        return load_game_hud(server=True)
