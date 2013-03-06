@@ -1,6 +1,10 @@
-Currently just the basic backbone of the game. 4 players with the right pieces that take turns moving (all currently on the same screen). There are currently several problems that I am working on such as pieces not capturing each other correctly (numbered capturing other numbered works correctly, but the bomb/spy/flag pieces are wonky)
+Alpha Version
 
-TODO:
-Highest priority is networking so that you can play against other people and to avoid the problems associated with having multiple players on one screen. There is no point in developing the game until I know how the networking is going to work.
-Check out the networking branch, I'm trying out sleekXMPP.
+Requires:
+-Python 2.6/2.7 (may also work with 2.5)
+-Pygame
+-SleekXMPP
+
+To play:
+python main.py
 
