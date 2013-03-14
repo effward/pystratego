@@ -1,38 +1,54 @@
+##########################################################################
+## helper.py
+##
+## Contains several misc. helper classes.
+##
+## by Andrew Francis
+##########################################################################
 import pygame, os, sys
 from pygame.locals import *
 from constants import *      
 
-# Determines if the game is over
 def is_game_over(players, b):
+    """Determines if the game is over"""
     flags_captured = []
     pieces_disabled = []
+    # Initialize lists
     for i in range(NUM_PLAYERS):
         pieces_disabled.append(True)
         flags_captured.append(0)
     for i in range(len(players)):
         player = players[i]
+        # Go through each player's pieces
         for piece in player.pieces:
+            # and check if the flag is trapped
             if piece.type == 'F' and piece.trapped:
                 flags_captured[i] += 1
-                #flag_pos.append((piece.x, piece.y))
+            # and check, if the piece is alive, if it can move
             elif not(piece.killed):
                 moves = possible_moves(piece, b, players)
                 if len(moves) > 0:
                     pieces_disabled[i] = False
+    # if both red flags are captured, blue wins
     if flags_captured[0] + flags_captured[2] is 2:
         return 'Blue'
+    # if both blue flags are captured, red wins
     elif flags_captured[1] + flags_captured[3] is 2:
         return 'Red'
+    # if none of red's pieces can move, blue wins
     if pieces_disabled[0] and pieces_disabled[2]:
         return 'Blue'
+    # if none of blue's pieces can move, red wins
     elif pieces_disabled[1] and pieces_disabled[3]:
         return 'Red'
     return None
             
 
-# Determines the outcome of combat between the pieces attacker and defender
 def fight(attacker, defender):
+    """Determines the outcome of combat between the pieces attacker and defender
+        Returns 1 if attacker wins, 0 if defender wins"""
     try:
+        # if the pieces are numbers, higher number wins, attacker wins ties
         aType = int(attacker.type)
         dType = int(defender.type)
         if aType >= dType:
@@ -40,26 +56,26 @@ def fight(attacker, defender):
         else:
             return 0
     except:
-        if attacker.type is 'B':
-            return 1
-        elif attacker.type is 'S':
-            if defender.type in ['F', 'S', '10', 'B']:
-                return 1
+        if attacker.type is 'B': # Bombs
+            return 1 # kill everything
+        elif attacker.type is 'S': # Spies
+            if defender.type in ['F', 'S', '10', 'B']: 
+                return 1 # kill flags, spies, marshals, and bombs
             else:
-                return 0
-        elif attacker.type is 'F':
-            return 0
-        if defender.type is 'B':
-            return 1
-        elif defender.type is 'S':
-            return 1
-        elif defender.type is 'F':
-            return 1
+                return 0 # die otherwise
+        elif attacker.type is 'F': # Flags
+            return 0 # shouldn't be able to attack
+        if defender.type is 'B': # Bombs
+            return 1 # always lose
+        elif defender.type is 'S': # Spies
+            return 1 # always lose
+        elif defender.type is 'F': # Flags
+            return 1 # always lose
         return 1
 
 
-# Returns all starting tiles for given color
 def starting_tiles(color, b):
+    """Returns all starting tiles for given color"""
     moves = []
     for i in range(4,11):
         if color is 'red':
@@ -79,67 +95,46 @@ def starting_tiles(color, b):
             moves.remove((x,y))
     return moves
 
-# Finds all available starting tiles for the selected piece
+    
 def starting_moves(selected, b, player):
-    moves = []
-    for i in range(4,11):
-        if selected.color is 'red':
-            moves.append((i,13))
-            moves.append((i,12))
-        elif selected.color is 'dred':
-            moves.append((i,1))
-            moves.append((i,2))
-        elif selected.color is 'blue':
-            moves.append((1,i))
-            moves.append((2,i))
-        elif selected.color is 'dblue':
-            moves.append((13,i))
-            moves.append((12,i))
+    """Finds all available starting tiles for the selected piece"""
+    moves = starting_tiles(selected.color, b)
     toRemove = []
+    # mark tiles for removal that already have pieces on them
     if player.color is selected.color:
         for i,j in moves:
             tileRect = b.tiles[i][j].rect
-            if not b.is_legal(i,j):
-                toRemove.append((i,j))
-            else:
-                for piece in player.pieces:
-                    if piece.click_check(tileRect) is not None:
-                        toRemove.append((i,j))
+            for piece in player.pieces:
+                if piece.click_check(tileRect) is not None:
+                    toRemove.append((i,j))
+    # remove marked tiles
     for pos in toRemove:
         moves.remove(pos)
     return moves
 
-# Checks if there is a piece from player p or their ally in the space (x,y)
-def is_occupied(p, b, x, y, players):
-    tileRect = b.tiles[x][y].rect
-    redteam = ['red', 'dred']
-    blueteam = ['blue', 'dblue']
-    if p.color in redteam:
-        for pl in players:
-            if pl.color in redteam:
-                for piece in pl.pieces:
-                    collision = piece.click_check(tileRect)
-                    if collision is not None:
-                        return True
-    elif p.color in blueteam:
-        for pl in players:
-            if pl.color in blueteam:
-                for piece in pl.pieces:
-                    collision = piece.click_check(tileRect)
-                    if collision is not None:
-                        return True
-    return False
-"""
-    tileRect = b.tiles[x][y].rect
-    for piece in p.pieces:
-        collision = piece.click_check(tileRect)
-        if collision is not None:
-            return True
-    return False
-"""
 
-# Checks if there is a piece from a player other than p in the space (x,y)
+def is_occupied(p, b, x, y, players):
+    """Checks if there is a piece from player p or their ally in the space (x,y)"""
+    tileRect = b.tiles[x][y].rect
+    if p.color in RED_TEAM:
+        for pl in players:
+            if pl.color in RED_TEAM:
+                for piece in pl.pieces:
+                    collision = piece.click_check(tileRect)
+                    if collision is not None:
+                        return True
+    elif p.color in BLUE_TEAM:
+        for pl in players:
+            if pl.color in BLUE_TEAM:
+                for piece in pl.pieces:
+                    collision = piece.click_check(tileRect)
+                    if collision is not None:
+                        return True
+    return False
+
+
 def is_occupied_excluding(p, players, b, x, y):
+    """Checks if there is a piece from a player other than p in the space (x,y)"""
     tileRect = b.tiles[x][y].rect
     for pl in players:
         if pl.color is p.color:
@@ -150,29 +145,29 @@ def is_occupied_excluding(p, players, b, x, y):
                 return True
     return False
     
-# Checks if there is a piece from an enemy player in the space (x,y)
+
 def is_occupied_enemy(p, players, b, x, y):
+    """Checks if there is a piece from an enemy player in the space (x,y)"""
     tileRect = b.tiles[x][y].rect
-    redteam = ['red', 'dred']
-    blueteam = ['blue', 'dblue']
-    if p.color in redteam:
+    if p.color in RED_TEAM:
         for pl in players:
-            if pl.color in blueteam:
+            if pl.color in BLUE_TEAM:
                 for piece in pl.pieces:
                     collision = piece.click_check(tileRect)
                     if collision is not None:
                         return True
-    elif p.color in blueteam:
+    elif p.color in BLUE_TEAM:
         for pl in players:
-            if pl.color in redteam:
+            if pl.color in RED_TEAM:
                 for piece in pl.pieces:
                     collision = piece.click_check(tileRect)
                     if collision is not None:
                         return True
     return False
 
-# Finds all possible moves for the selected piece
+
 def possible_moves(selected, board, players):
+    """Finds all possible moves for the selected piece"""
     moves = []
     x = selected.x
     y = selected.y
@@ -182,7 +177,7 @@ def possible_moves(selected, board, players):
             p = pl
     if p is None:
         print 'You are not a player in the game'
-        sys.exit()
+        pygame.event.post(Event(QUIT))
         
     # Append the 4 basic move directions to the list of moves    
     if board.is_legal(x-1, y) and not(is_occupied(p, board, x-1, y, players)):
@@ -203,16 +198,14 @@ def possible_moves(selected, board, players):
                 moves.append((x+1,y))
         else:
             moves.append((x+1,y))
-    #print 'is_legal: ' + str(board.is_legal(x,y+1)) + ', is_occupied: ' + str(is_occupied(p, board, x, y+1, players))
     if board.is_legal(x, y+1) and not(is_occupied(p, board, x, y+1, players)):
         if selected.type in ['B', 'F']:
             if not(is_occupied_excluding(p, players, board, x, y+1)):
                 moves.append((x,y+1))
         else:
-            #print 'Appending: (' + str(x) + ', ' + str(y+1) + ')'
             moves.append((x,y+1))
             
-    # Append special moves for 2's
+    # Append special moves for 2's, 2's can move any distance in a straight line
     if selected.type is '2':
         if board.is_legal(x+1, y) and not(is_occupied_excluding(p, players, board, x+1, y)) and not(is_occupied(p, board, x+1,y, players)):
             for i in range(x+2, BOARD_SIZE):
@@ -247,7 +240,7 @@ def possible_moves(selected, board, players):
                 else:
                     break
                     
-    # Append special moves for 6's
+    # Append special moves for 6's, 6's can move 2 squares in any direction
     elif selected.type is '6':
         extraMoves = []
         for i,j in moves:
@@ -268,7 +261,7 @@ def possible_moves(selected, board, players):
         for move in extraMoves:
             moves.append(move)
             
-    # Append special moves for bombs
+    # Append special moves for bombs, bombs can shoot over 2 squares if the 3rd is occupied by an enemy piece
     elif selected.type is 'B':
         for i in range(x+1, x+4):
             if not (board.is_legal(i,y) or board.is_legal_lake(i,y)):
@@ -306,19 +299,7 @@ def possible_moves(selected, board, players):
                 moves.append((x,i))
             else:
                     break
-        """        
-        pos = [(x-3,y),(x+3,y),(x,y-3),(x,y+3)]
-        for i,j in pos:
-            if not board.is_legal(i,j):
-                continue
-            tileRect = board.tiles[i][j].rect
-            for p in players:
-                if p.color is not selected.color:
-                    for piece in p.pieces:
-                        if piece.click_check(tileRect) is not None:
-                            moves.append((i,j))
-                            break
-                            """
+       
     # Remove any moves that would move onto friendly pieces
     toRemove = []
     for i,j in moves:
@@ -330,13 +311,15 @@ def possible_moves(selected, board, players):
         moves.remove(pos)
     return moves
 
-# Converts indices to pixel coordinates on the board
+
 def getPos(x,y):
+    """Converts indices to pixel coordinates on the board"""
     i = BOARD_OFFSET_X + TILE_SIZE * x 
     j = BOARD_OFFSET_Y + TILE_SIZE * y 
     return (i,j)
     
 def get_color_id(color):
+    """Returns the id number of the given team color"""
     if color == 'red':
         return 0
     if color == 'blue':
@@ -347,6 +330,7 @@ def get_color_id(color):
         return 3
     
 def render_nick(font, nick, color):
+    """Renders the given nickname into a pygame font object to be drawn to the screen"""
     if color in ['red', 'dred']:
         nick_text = font.render(nick, 1, (90, 10, 10))
     if color in ['blue', 'dblue']:
@@ -361,10 +345,13 @@ def render_nick(font, nick, color):
         nick_pos = nick_text.get_rect(left=SCREEN_WIDTH - (BOARD_OFFSET_X - 60), centery=SCREEN_HEIGHT/2)
     return nick_text, nick_pos
 
-# Loads image with file name: file_name, if colorkey is specified
-# all pixels that are the same color as the specified colorkey will be
-# rendered as invisible
+
 def load_image(file_name, colorkey=None):
+    """Loads image with file name: file_name, if colorkey is specified
+    all pixels that are the same color as the specified colorkey will be
+    rendered as invisible
+    
+    From Pygame tutorial"""
     full_name = os.path.join('assets', file_name)
     
     try:
@@ -386,6 +373,9 @@ def load_image(file_name, colorkey=None):
     
 # Loads sound with file name: file_name
 def load_sound(file_name):
+    """Loads sound with file name: file_name
+    
+    From Pygame Tutorial"""
     # Dummy Class to return on error
     class No_Sound:
         def play(self): pass

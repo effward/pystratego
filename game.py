@@ -1,3 +1,10 @@
+##########################################################################
+## game.py
+##
+## Represents a single 4-player game running on the server
+##
+## by Andrew Francis
+##########################################################################
 from board import Board
 from player import Player
 from constants import *

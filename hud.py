@@ -1,3 +1,10 @@
+##########################################################################
+## hud.py
+##
+## Layouts of all the different interfaces
+##
+## by Andrew Francis
+##########################################################################
 import pygame, threading, string
 from pgu import gui
 from tempfile import mkstemp
@@ -18,10 +25,11 @@ class MyApp(gui.App):
         #gui.App.event(self,ev)
 
 def load_pre_lobby():
+    """Pre-Lobby Interface"""
     menu = gui.App()
     menu.connect(gui.QUIT,menu.quit,None)
     
-    main = gui.Container(width=500, height=400) #, background=(220, 220, 220) )
+    main = gui.Container(width=500, height=400) 
     
     main.add(gui.Label("Select User", cls="h1"), 20, 20)
 
@@ -34,6 +42,7 @@ def load_pre_lobby():
     count = 1
     
     def remove_list_item(arg):
+        """Removes selected list item"""
         v = my_list.value
         if v:
             item = v
@@ -53,6 +62,7 @@ def load_pre_lobby():
         move(abs_path, USERS_FILE)
 
     def add_list_item(arg):
+        """Adds new item to list with the value entered in the text box"""
         my_list.add(my_input.value,value=my_input.value)
         my_list.resize()
         my_list.repaint()
@@ -62,6 +72,7 @@ def load_pre_lobby():
         users.close()
         
     def select_user(arg):
+        """Picks the selected username"""
         user = my_list.value
         if user:
             pygame.event.post(Event(MODECHANGE, mode=1, nick=user))
@@ -91,16 +102,13 @@ def load_pre_lobby():
     
 
 def load_lobby():
+    """Lobby Interface"""
     lobby = MyApp()
     lobby.connect(gui.QUIT,lobby.quit,None)
     
     main = gui.Container(width=1280, height=720) 
     
     def chat_message(_event,_widget,_code,a,b,c):
-        print '***********************************************************************'
-        print 'STAR STAR'
-        print '***********************************************************************'
-        print _event
         t.tr()
         t.td(gui.Label(nick))
     
@@ -116,6 +124,7 @@ def load_lobby():
     return lobby
     
 def load_loading_screen():
+    """Loading Screen Interface"""
     screen = MyApp()
     screen.connect(gui.QUIT, screen.quit, None)
     
@@ -127,10 +136,11 @@ def load_loading_screen():
     return screen
     
 def load_game_lobby(server=False, games=[]):
+    """Game Lobby interface"""
     menu = gui.App()
     menu.connect(gui.QUIT,menu.quit,None)
     
-    main = gui.Container(width=500, height=400) #, background=(220, 220, 220) )
+    main = gui.Container(width=500, height=400)
     
     main.add(gui.Label("Select Game", cls="h1"), 20, 20)
 
@@ -140,7 +150,7 @@ def load_game_lobby(server=False, games=[]):
     count = 1
     
     def clean_room_name(name):
-        #print 'Dirty: ' + name
+        """Make the room name clean for XMPP rooms"""
         clean_name = ''
         name = name.lower()
         name_parts = name.split(' ')
@@ -150,11 +160,11 @@ def load_game_lobby(server=False, games=[]):
                     clean_name += letter
             if i < len(name_parts)-1:
                 clean_name += '_'
-        #print 'Cleaned: ' + clean_name
         return clean_name
             
 
     def add_list_item(arg):
+        """Adds new item to list with the value entered in the text box"""
         room_name = clean_room_name(my_input.value)
         pygame.event.post(Event(NETWORK, msg='create_room', room=room_name))
         my_list.add(room_name,value=room_name)
@@ -168,6 +178,7 @@ def load_game_lobby(server=False, games=[]):
         FILE_LOCK.release()
         
     def select_room(arg):
+        """Picks the highlighted room"""
         room_name = my_list.value
         if room_name:
             if server:
@@ -176,13 +187,12 @@ def load_game_lobby(server=False, games=[]):
                 pygame.event.post(Event(MODECHANGE, mode=3, room=room_name))
             
     def refresh_rooms(arg):
+        """Requests a new list of available games"""
         if server:
             pygame.event.post(Event(MODECHANGE, mode=0))
         else:
             pygame.event.post(Event(NETWORK, msg='connected'))
-        #my_list.clear()
-        
-    #refresh_rooms(None)
+
     
     if server:
         for game in games:
@@ -216,6 +226,7 @@ def load_game_lobby(server=False, games=[]):
     return menu
     
 def load_loading_game():
+    """Loading game interface"""
     screen = MyApp()
     screen.connect(gui.QUIT, screen.quit, None)
     
@@ -227,6 +238,7 @@ def load_loading_game():
     return screen
     
 def load_pre_game_hud():
+    """Pre-game interface"""
     hud = gui.App()
     hud.connect(gui.QUIT, hud.quit, None)
     
@@ -245,6 +257,7 @@ def load_pre_game_hud():
     return hud
     
 def load_waiting_hud():
+    """Waiting for game to start interface"""
     hud = gui.App()
     hud.connect(gui.QUIT, hud.quit, None)
     
@@ -263,6 +276,7 @@ def load_waiting_hud():
     return hud
     
 def load_game_hud(server=False):
+    """In-game interface"""
     hud = gui.App()
     hud.connect(gui.QUIT, hud.quit, None)
     
@@ -280,6 +294,7 @@ def load_game_hud(server=False):
     return hud
     
 def load_post_game_hud(result):
+    """Post-game interface, displays result"""
     hud = gui.App()
     hud.connect(gui.QUIT, hud.quit, None)
     
@@ -298,6 +313,7 @@ def load_post_game_hud(result):
     return hud
     
 def load_quitting_game_hud():
+    """Quitting game interface"""
     hud = gui.App()
     hud.connect(gui.QUIT, hud.quit, None)
     
@@ -308,7 +324,7 @@ def load_quitting_game_hud():
     return hud
     
 def load_hud(mode, text=None):
-    print "loading hud " + str(mode)
+    """Loads the correct interface corresponding to mode"""
     if mode is 0:
         return load_pre_lobby()
     elif mode is 1:
@@ -330,7 +346,7 @@ def load_hud(mode, text=None):
         return load_loading_screen()
         
 def load_server_hud(mode, text=None, games=[]):
-    print "loading server hud " + str(mode)
+    """Loads the correct interface according to the server mode"""
     if mode is 0:
         return load_game_lobby(server=True, games=games)
     if mode is 1:

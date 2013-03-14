@@ -1,3 +1,10 @@
+##########################################################################
+## network_server.py
+##
+## The server's XMPP network interface. An XMPP component.
+##
+## by Andrew Francis
+##########################################################################
 import logging, sys, threading, pygame
 
 from sleekxmpp.componentxmpp import ComponentXMPP
@@ -52,8 +59,7 @@ class EchoComponent (ComponentXMPP, threading.Thread):
             print("Unable to Connect.")
             
     def session_start(self, event):
-        #logging.debug('sending presence')
-        
+        """Joins the lobby"""
         # Join the lobby
         self['xep_0045'].joinMUC(self.lobby, self.nick, password='pystratego', wait=True, pfrom=SERVER_JID_PATTERN % 'lobby')
         
@@ -74,29 +80,32 @@ class EchoComponent (ComponentXMPP, threading.Thread):
                 self['xep_0045'].destroy(item[0], ifrom=SERVER_JID_PATTERN % item[2])
                 
     def broadcast(self, move_data):
+        """Broadcasts a message to a particular room, used for all outgoing gameplay messages"""
         room, body = move_data
         self.send_message(mto=ROOM_JID_PATTERN % room, mbody=body, mtype='groupchat', mfrom=SERVER_JID_PATTERN % room)
         
     def send_move(self, move_data):
+        """Send a move to a particular user, used to send initial placements as players connect"""
         room, jid, body = move_data
         print 'sending message to: ' + jid
         self.send_message(mto=jid, mbody=body, mtype='normal', mfrom=SERVER_JID_PATTERN % room)
                 
     def muc_message(self, msg):
+        """Handles incoming multi-user-chat messages, should only recieve messages from self"""
         if msg['mucnick'] != self.nick and self.nick in msg['body']:
             print '********' + msg['from'].bare + '**************'
             self.send_message(mto=msg['from'].bare, mbody="I heard that, %s." % msg['mucnick'], mtype='groupchat')
             
     def _create_room(self, room, nick):
+        """Helper function to create a room on the server"""
         self.rooms[room] = [(nick,0)]
         self.room_ids[room] = 1
-        print '****************************************'
-        print self.rooms
         self['xep_0045'].joinMUC(ROOM_JID_PATTERN % room, self.nick, wait=True, pfrom=SERVER_JID_PATTERN % room)
         self['xep_0045'].configureRoom(ROOM_JID_PATTERN % room, ifrom=SERVER_JID_PATTERN % room)
         pygame.event.post(Event(NETWORK, msg='create_game', game_name=room))
     
     def message(self, message):
+        """Handles incoming normal messages, used to get moves and gameplay info from players"""
         if message['type'] in ('chat', 'normal'):
             body = message['body'].split(':')
             if len(body) > 1:
@@ -127,11 +136,5 @@ class EchoComponent (ComponentXMPP, threading.Thread):
                 if command == 'AI':
                     pygame.event.post(Event(NETWORK, msg='add_ai', game_name=body[1], id=self.room_ids[body[1]]))
                     self.room_ids[body[1]] = self.room_ids[body[1]] + 1
-                        
-                        
-                        
-                        
-                        
-                        
                         
                         

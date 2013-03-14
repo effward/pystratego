@@ -1,3 +1,10 @@
+##########################################################################
+## constants.py
+##
+## All the constants, all the time.
+##
+## by Andrew Francis
+##########################################################################
 import threading
 from pygame.locals import *
 
@@ -32,10 +39,9 @@ PIECE_START_Y = BOARD_OFFSET_Y + PIECE_SIZE / 2
 # Player constants
 NUM_PLAYERS = 4
 PLAYER_COLORS = ['red', 'blue', 'dred', 'dblue']
+RED_TEAM = ['red', 'dred']
+BLUE_TEAM = ['blue', 'dblue']
 STOCKADE_POS = [(7,13),(1,7),(7,1),(13,7)]
 
 # Threading
-CHAT_QUEUE_LOCK = threading.Lock()
-MOVE_QUEUE_LOCK = threading.Lock()
-MOVE_QUEUE = []
 FILE_LOCK = threading.Lock()

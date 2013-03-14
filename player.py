@@ -1,11 +1,19 @@
+##########################################################################
+## player.py
+##
+## Stratego Piece, Player, and AIPlayer classes, used to represent the players and their pieces in a game of Ultimate Stratego.
+##
+## by Andrew Francis
+##########################################################################
 import pygame, helper, random, board
 from pygame.event import Event
 from helper import *
 from constants import *
 
+# A single piece controlled by a player
 class Piece(pygame.sprite.Sprite):
     def __init__(self, color, type, x, y, server, pregame=False):
-        # Call Sprite initializer
+        # Call Sprite initializer if gui is being displayed
         if server:
             self.rect = pygame.Rect(0, 0, TILE_SIZE, TILE_SIZE)
         else:
@@ -19,7 +27,6 @@ class Piece(pygame.sprite.Sprite):
         self.rect.center = (i,j)
         self.type = type
         self.color = color
-        # Position on the board [0...14], -1 means pre-placement, -2 means captured
         self.x = x
         self.y = y
         self.x_velocity = 0
@@ -29,44 +36,28 @@ class Piece(pygame.sprite.Sprite):
         self.server = server
         
     def click_check(self, mouseRect):
+        """Returns itself if mouseRect intersects with this tile, null otherwise"""
         if mouseRect.colliderect(self.rect):
             return self    
         return None
 
     def move(self, x, y):
-        #x1,y1 = self.rect.center
-        #x2,y2 = helper.getPos(x,y)
-        #self.x_velocity = (x2 - x1) / 100
-        #self.y_velocity = (y2 - y1) / 100
-        if self.type == '2':
-            print "Before: " + str(self.x) + ' ' + str(self.y)
+        """Moves this piece to board square (x,y)"""
         self.x = x
         self.y = y
-        if self.type == '2':
-            print "Moving piece: " + self.color + ' ' + self.type + ' ' + str(self.x) + ' ' + str(self.y)
         self.rect.center = helper.getPos(x,y)
         
     def off_board(self):
+        """Returns True if this piece is not on a legal square, flase otherwise"""
         if self.x < 0 or self.x >= BOARD_SIZE or self.y < 0 or self.y >= BOARD_SIZE:
             return True
         return False
         
-    """    
-    def update(self):
-        if self.x > 0 and self.y > 0:
-            targetPos =  (self.x * const.TILE_SIZE + const.BOARD_OFFSET_X, self.y * const.TILE_SIZE + const.BOARD_OFFSET_Y)
-            if self.rect.center is not targetPos:
-                self.rect.move_ip((self.x_velocity, self.y_velocity))
-            else:
-                self.x_velocity = 0
-                self.y_velocity = 0
-        """
-        
 
+# A single player in a game of Ultimate Stratego
 class Player:
     def __init__(self, b, color, remote=False, server=False, ai=False):
         self.color = color
-        #self.board = b
         self.kills = 0
         self.nick = None
         self.nickpos = None
@@ -84,11 +75,10 @@ class Player:
                     self.pieces.append(Piece(color, PIECE_TYPES[i], i+1, -1, server))
                 elif self.color == 'dblue':
                     self.pieces.append(Piece(color, PIECE_TYPES[i], BOARD_SIZE, i+1, server))
-
         else:
             self.pieces = pygame.sprite.Group()
-            if remote:
-                type = 'U'
+            if remote: # if this player is remote
+                type = 'U' # All of his pieces are unknown
                 for i in range(len(PIECE_TYPES)):
                     if self.color == 'red':
                         self.pieces.add(Piece(color, type, 1, BOARD_SIZE, server))
@@ -108,30 +98,17 @@ class Player:
                         self.pieces.add(Piece(color, PIECE_TYPES[i], i+1, -1, server, True))
                     elif self.color == 'dblue':
                         self.pieces.add(Piece(color, PIECE_TYPES[i], BOARD_SIZE + 1, i+1, server))
-                
-            """
-        self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 0)))
-        self.pieces.add(Piece(color, '2', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 1)))
-        self.pieces.add(Piece(color, '3', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 2)))
-        self.pieces.add(Piece(color, '4', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 3)))
-        self.pieces.add(Piece(color, '5', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 4)))
-        self.pieces.add(Piece(color, '6', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 5)))
-        self.pieces.add(Piece(color, '7', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 6)))
-        self.pieces.add(Piece(color, '8', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 7)))
-        self.pieces.add(Piece(color, '9', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 8)))
-        self.pieces.add(Piece(color, '10', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 9)))
-        self.pieces.add(Piece(color, 'S', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 10)))
-        self.pieces.add(Piece(color, 'F', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 11)))
-        self.pieces.add(Piece(color, 'B', (const.PIECE_START_X, const.PIECE_START_Y + const.PIECE_SIZE * 12)))
-        """
+
         
     def random_start(self, b):
+        """Places all of this player's pieces in random starting locations"""
         for piece in self.pieces:
             moves = starting_moves(piece, b, self)
             x,y = moves[random.randint(0, len(moves)-1)]
             piece.move(x,y)
                     
     def ready(self):
+        """Returns true if all of this player's pieces have been placed, false otherwise"""
         for piece in self.pieces:
             if piece.off_board():
                 if self.server:
@@ -140,6 +117,7 @@ class Player:
         return True
         
     def kill(self, piece, killer):
+        """Kills piece if it belongs to this player, and moves it to the killer's capture area"""
         if not(piece.color == self.color):
             print "Can only kill pieces belonging to this player"
             return
@@ -160,6 +138,7 @@ class Player:
             killer.kills += 1
             
             
+# A basic AI Player
 class AIPlayer(Player):
     def __init__(self, b, color, game_name, gui):
         self.game_name = game_name
@@ -172,6 +151,7 @@ class AIPlayer(Player):
         self.start(b)
         
     def start(self, b):
+        """Places the AI player's pieces randomly"""
         moves = []
         for piece in self.pieces:
             avail_moves = starting_moves(piece, b, self)
@@ -185,6 +165,7 @@ class AIPlayer(Player):
             pygame.event.post(Event(NETWORK, msg='check_move', game_name=self.game_name, move=move))
             
     def move(self, b, players, turn):
+        """Picks a piece at random and moves it in to a random position"""
         moves = []
         if self.gui:
             for k in range(10000):

@@ -1,7 +1,15 @@
+##########################################################################
+## turnmarker.py
+##
+## A sprite that marks who's turn it is.
+##
+## by Andrew Francis
+##########################################################################
 import pygame
 import helper
 from constants import *
 
+# A marker, knows where to move for each player
 class Marker(pygame.sprite.Sprite):
     def __init__(self, player):
         # Call Sprite initializer
@@ -11,32 +19,24 @@ class Marker(pygame.sprite.Sprite):
         self.player = player
         
     def move(self, player):
+        """Moves to the correct position for player's turn"""
         self.player = player
         self.rect.center = self.getPlayerPos(player)
 
     def getPlayerPos(self, player):
+        """Returns the pixel position of the marker for player"""
         if player is 0:
             return helper.getPos(12,14)
-            #i = SCREEN_WIDTH / 2
-            #j = SCREEN_HEIGHT - self.rect.height
         elif player is 1:
             return helper.getPos(0,12)
-            #i = BOARD_OFFSET_X - self.rect.width
-            #j = SCREEN_HEIGHT / 2
         elif player is 2:
             return helper.getPos(2,0)
-            #i = SCREEN_WIDTH / 2
-            #j = 0
         elif player is 3:
             return helper.getPos(14,2)
-            #i = BOARD_OFFSET_X + TILE_SIZE * BOARD_SIZE
-            #j = SCREEN_HEIGHT / 2
         else:
             return (0,0)
-            #i = 0
-            #j = 0
-        #return (i,j)
         
+# Sprite group to hold marker sprite
 class TurnMarker(pygame.sprite.Group):
     def __init__(self):
         pygame.sprite.Group.__init__(self)

@@ -1,73 +1,53 @@
+##########################################################################
+## board.py
+##
+## Stratego BoardTile and Board classes, used to represent the Ultimate Stratego game board.
+##
+## by Andrew Francis
+##########################################################################
+
 import pygame, helper
 import constants as const
 from constants import *
-"""
-class TurnMarker(pygame.sprite.Sprite):
-    def __init__(self, player):
-        # Call Sprite initializer
-        pygame.sprite.Sprite.__init__(self)
-        self.image, self.rect = helper.load_image('marker.bmp', -1)
-        self.rect.center = self.getPlayerPos(player)
-        self.player = player
         
-    def move(self, player):
-        self.player = player
-        self.rect.center = self.getPlayerPos(player)
-
-    def getPlayerPos(self, player):
-        if player is 0:
-            i = SCREEN_WIDTH / 2
-            j = SCREEN_HEIGHT - self.rect.height
-        elif player is 1:
-            i = BOARD_OFFSET_X - self.rect.width
-            j = SCREEN_HEIGHT / 2
-        elif player is 2:
-            i = SCREEN_WIDTH / 2
-            j = 0
-        elif player is 3:
-            i = BOARD_OFFSET_X + TILE_SIZE * BOARD_SIZE
-            j = SCREEN_HEIGHT / 2
-        else:
-            i = 0
-            j = 0
-        return (i,j)
-"""
-        
+# A single board tile on the game board
 class BoardTile(pygame.sprite.Sprite):
     def __init__(self, type, pos, server):
-        # Call Sprite initializer
         pygame.sprite.Sprite.__init__(self)
+        
+        # if the board is on the server, don't need to load the tile image
         if server:
             self.rect = pygame.Rect(0, 0, TILE_SIZE, TILE_SIZE)
         else:
             self.image, self.rect = helper.load_image('tile' + type + '.bmp')
             self.altImage, self.altRect = None, None
+            # if this tile is a basic tile, load the highlight image
             if type is '1':
                 self.altImage, self.altRect = helper.load_image('tile' + type + '_hl.bmp')
+                
         self.rect.center = pos
         self.type = type
         
     def click_check(self, mouseRect):
+        """Returns itself if mouseRect intersects with this tile, null otherwise"""
         if mouseRect.colliderect(self.rect):
             return self    
         return None
 
     def swap_highlight(self):
+        """Swaps the image displayed to make it look like the tile is (de)highlighted"""
         if self.altImage is not None:
             tempImage = None
             tempImage = self.image
             self.image = self.altImage
             self.altImage = tempImage
 
-
-    def update(self):
-        pass
         
+# An Ultimate Stratego game board, essentially a 2D list of BoardTiles
 class Board(pygame.sprite.Group):
     def __init__(self, server=False):
-        # Call Group initializer
         pygame.sprite.Group.__init__(self)
-        self.tiles = []
+        self.tiles = [] 
         for x in range(const.BOARD_SIZE):
             tempList = []
             for y in range(const.BOARD_SIZE):
@@ -98,11 +78,13 @@ class Board(pygame.sprite.Group):
             self.tiles.append(tempList)
     
     def is_legal(self, x, y):
+        """Returns True if (x,y) is a legal square to move into, False otherwise"""
         if x < 0 or x >= BOARD_SIZE or y < 0 or y >= BOARD_SIZE:
             return False
         return self.tiles[x][y].type == '1'    
         
     def is_legal_lake(self, x, y):
+        """Returns True if (x,y) is a lake square, False otherwise"""
         if x < 0 or x >= BOARD_SIZE or y < 0 or y >= BOARD_SIZE:
             return False
         return self.tiles[x][y].type == '2'

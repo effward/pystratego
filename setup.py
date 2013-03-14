@@ -7,9 +7,9 @@ base = None
 build_exe_options = {"include_files": ['assets', 'freesansbold.ttf', 'default', 'rooms.txt', 'users.txt', 'sleekxmpp']}
 
 setup(  name = "pyStratego",
-            version = "0.1",
-            description = "Multiplayer Online Ultimate Stratego",
+            version = "0.3",
+            description = "Multiplayer Online Ultimate Stratego, now with AI!",
             author = "Andrew Francis",
             author_email= "agf33@cornell.edu",
             options = {"build_exe": build_exe_options},
-            executables = [Executable("main.py", base=base)])
+            executables = [Executable("main.py", base=base, targetName="pyStratego.exe")])

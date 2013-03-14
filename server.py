@@ -1,3 +1,10 @@
+##########################################################################
+## server.py
+##
+## Main server loop
+##
+## by Andrew Francis
+##########################################################################
 import pygame, sys, os, threading
 import board, player, turnmarker
 from pygame.locals import *
@@ -13,43 +20,28 @@ placements = {}
 
 def check_move(game_name, move):
     game = games[game_name]
-    #print 'Move: '
-    #print move
-    #print 'Turn: ' + str(game.turn)
     turn = int(move[0])
-    #print 'turn: ' + move[0]
     if turn is -1:
-        print 'player: ' + move[1]
         for piece in game.players[get_color_id(move[1])].pieces:
-            print 'type: ' + move[2]
             if piece.type == move[2] and piece.off_board():
-                print 'pos: ' + move[5] + ', ' + move[6]
-                print str(piece.x) + ',' + str(piece.y)
                 piece.move(int(move[5]), int(move[6]))
-                print str(piece.x) + ',' + str(piece.y)
                 body = 'MOVE:' + move[0] + ':' + move[1] + ':' + move[5] + ':' + move[6]
                 readyToStart = True
                 for p in game.players:
                     readyToStart = readyToStart and p.ready()
-                    #print "Player: " + p.nick_plain + ' ' + p.color
-                    #print p.pieces
                 if readyToStart:
                     game.turn = 0
                 return True, body, None
     else:
         turnPlayer = game.turn % NUM_PLAYERS
         combat = None
-        #print 'turn: ' + str(turn) + '; game.turn: ' + str(game.turn) + '; color_id: ' + str(get_color_id(move[1])) + '; turnPlayer: ' + str(turnPlayer)
         if turn is game.turn and get_color_id(move[1]) is turnPlayer:
             for piece in game.players[get_color_id(move[1])].pieces:
-                #print 'move_type: ' + move[2] + '; piece.type: ' + piece.type + '; x: ' + move[3] + '; piece.x: ' + str(piece.x) + '; y: ' + move[4] + '; piece.y: ' + str(piece.y)
                 if piece.type == move[2] and piece.x is int(move[3]) and piece.y is int(move[4]):
                     selectedMoves = possible_moves(piece, game.board, game.players)
                     for x, y in selectedMoves:
-                        #print 'move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
                         if x is int(move[5]) and y is int(move[6]):
                             piece.move(x,y)
-                            #print 'piece moved: move_x: ' + move[5] + '; x: ' + str(x) + '; move_y: ' + move[6] + '; y: ' + str(y)
                             body = 'MOVE:' + move[0] + ':' + move[1] + ':' + move[3] + ':' + move[4] + ':' + move[5] + ':' + move[6]
                             game.turn += 1
                             for player in game.players:
@@ -129,22 +121,12 @@ def main(gui=False):
                     if games[event.game_name].players[nextTurnPlayer].is_ai:
                         pygame.event.post(Event(AI, msg='ai_move', game_name=event.game_name, id=nextTurnPlayer))
                 if event.msg == 'check_move':
-                    #print 'Checking move for ' + event.move[1]
-                    #print event.move
                     result, body, combat = check_move(event.game_name, event.move)
                     if result:
                         if int(event.move[0]) is -1:
                             pls = placements.setdefault(event.game_name, [])
                             pls.append(body)
                             placements[event.game_name] = pls
-                            """
-                            gameReady = True
-                            for player in games[event.game_name].players:
-                                for piece in player.pieces:
-                                    if piece.off_board():
-                                        gameReady = False
-                            if gameReady:
-                            """
                             if len(pls) is 52:
                                 for player in games[event.game_name].players:
                                     print '**************************'
@@ -169,25 +151,17 @@ def main(gui=False):
                 elif event.msg == 'create_game':
                     games[event.game_name] = Game(event.game_name, gui)
                 elif event.msg == 'add_ai':
-                    ai_player = AIPlayer(games[event.game_name].board, PLAYER_COLORS[int(event.id)], event.game_name, gui)
-                    games[event.game_name].players[int(event.id)] = ai_player
+                    if event.id < NUM_PLAYERS:
+                        ai_player = AIPlayer(games[event.game_name].board, PLAYER_COLORS[int(event.id)], event.game_name, gui)
+                        games[event.game_name].players[int(event.id)] = ai_player
+                        msg = 'NICK:' + ai_player.color + ':' + ai_player.nick_plain
+                        network.event('broadcast', (event.game_name, msg))
                 elif event.msg == 'nick_received':
                     if event.game in games:
                         if int(event.id) < len(games[event.game].players):
                             games[event.game].players[int(event.id)].nick_plain = event.nick
                 elif event.msg == 'player_joined':
                     print 'New player joined ' + event.game_name
-                    #if event.game_name in games:
-                        #print 'Game found, updating player ' + str(event.color_id)
-                        #game = games[event.game_name]
-                        #game.players[event.color_id].nick_plain = event.nick
-                        #for player in game.players:
-                            #for piece in player.pieces:
-                                #print 'Checking (' + str(piece.x) + ', ' + str(piece.y) + ')'
-                                #if not(piece.off_board()):
-                                    #print 'Sending piece'
-                                    #body = 'PLACEMENT:-1:' + piece.color + ':' + str(piece.x) + ':' + str(piece.y)
-                                    #network.event('send_move', (event.game_name, event.jid, body))
                 else:
                     print '**************************'
                     print event.msg
@@ -212,13 +186,8 @@ def main(gui=False):
                     p.pieces.draw(screen)
                     if p.nick:
                         screen.blit(p.nick, p.nickpos)
-                #for i in range(len(players)):
-                    #if i is not turnPlayer:
-                        #players[i].pieces.draw(screen)
-                #players[turnPlayer].pieces.draw(screen)
                 marker.draw(screen)
-            hud.paint()
-            #screen.blit(titleImage, titleRect)           
+            hud.paint()    
             pygame.display.flip()
             
 if __name__ == '__main__': 

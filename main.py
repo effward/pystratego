@@ -1,3 +1,10 @@
+##########################################################################
+## main.py
+##
+## Main game loop
+##
+## by Andrew Francis
+##########################################################################
 import pygame, sys, random, os, threading, time
 import board, player, turnmarker
 from pygame.locals import *
@@ -14,25 +21,18 @@ def main():
     font = pygame.font.Font("freesansbold.ttf", 24)
     
 
-    client = None #Client('test@andrew-win7', 'hello123', 'test1@stratego.andrew-win7', 'testing123', 'stratego.andrew-win7', get='all')
+    client = None
     
     
     screen = pygame.display.set_mode(SCREEN_SIZE)
-    #screen = pygame.display.set_mode(SCREEN_SIZE, pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
-    #screen = pygame.display.set_mode((1,1))
     pygame.display.set_caption('pyStratego')
     
     # Free to use texture from http://www.designbash.com/wp-content/uploads/2010/01/wood-table-texture-2.jpg
     background, background_rect = load_image("bg.bmp")
     screen.blit(background, (0,0))
-    titleImage, titleRect = load_image("title.bmp")
-    titleRect.center = (SCREEN_WIDTH/2, 20)
-    screen.blit(titleImage, titleRect)
     
     b = board.Board()
     players = None
-    #for i in ['red', 'red', 'red', 'red']:
-    #    players.append(player.Player(i))
     myPlayer = 0
     myNick = None
     
@@ -51,36 +51,41 @@ def main():
     marker = None
     move_sending = False
     
+    # Load Pre-Lobby hud
     hud = load_hud(mode)
     
     while running:
         turnPlayer = turn % NUM_PLAYERS
+        
         # Mode change logic
-        if mode is 4:
-            if myPlayer < NUM_PLAYERS:
-                if not ready:
-                    players[myPlayer].random_start(b)
-                if players[myPlayer].ready():
+        if mode is 4: # if pre-game
+            if myPlayer < NUM_PLAYERS: # if I am a player in this game
+                if not ready: # if I have not placed my pieces
+                    players[myPlayer].random_start(b) # place them randomly
+                if players[myPlayer].ready(): # otherwise send them to the server
                     ready = True
                     client.event('send_placement', players[myPlayer].pieces)
                     pygame.event.post(Event(MODECHANGE, mode=5))
-        if mode is 5:
+        elif mode is 5: # if waiting for other players
             readyToStart = True
             for p in players:
                 readyToStart = readyToStart and p.ready()
-            if readyToStart:
+            if readyToStart: # switch to game mode once all players ready
                 pygame.event.post(Event(MODECHANGE, mode=6))
-        if mode is 6:
-            result = is_game_over(players, b)
-            if result is not None:
+        elif mode is 6: # if playing a game
+            result = is_game_over(players, b) # check win conditions
+            if result is not None: # if someone won, switch to post-game
                 pygame.event.post(Event(MODECHANGE, mode=7, winner=result))
+                
+        # event handler
         for event in pygame.event.get():
             if event.type == QUIT: 
+                # Switch to quitting hud
                 hud.quit()
                 hud = load_quitting_game_hud()
                 hud.paint()
-                pygame.display.flip()
-                if client:
+                pygame.display.flip() #re-paint window
+                if client: # if connected
                     client.event('disconnect', None)
                 sys.exit()
             # Process Keyboard input
@@ -188,6 +193,7 @@ def main():
                     print '****************************************************************'
                     print '****************************************************************'
                     #TODO: deal with network failures
+                    
             # Check for mode changes
             elif event.type == MODECHANGE:
                 mode = event.mode
@@ -195,7 +201,6 @@ def main():
                     #jid = event.nick + '@andrew-win7'
                     jid = event.nick + '@67.255.21.127'
                     myNick = event.nick
-                    print jid
                     client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
                 elif mode is 2:
                     if players:
@@ -253,8 +258,6 @@ def main():
                                 for x,y in selectedMoves:
                                     target = b.tiles[x][y].click_check(mouseRect)
                                     if target is not None and selected is not None:
-                                        #client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
-                                        #client.event('send_move', (turn, selected, selected.x, selected.y, x, y))
                                         selected.move(x,y)
                                         # Turn off highlights
                                         for x,y in selectedMoves:
@@ -271,14 +274,6 @@ def main():
                                         # if so highlight moves for that piece
                                         if temp is not None:
                                             # If clicked selected piece, deselect it
-                                            """
-                                            if temp == selected:
-                                                haveSelected = False
-                                                selected = None
-                                                for x,y in selectedMoves:
-                                                    b.tiles[x][y].swap_highlight()
-                                                break
-                                            """
                                             haveSelected = True
                                             selected = temp
                                             for x,y in selectedMoves:
@@ -304,33 +299,16 @@ def main():
                                         break
                     elif mode is 6: #playing
                         if turnPlayer is myPlayer and not(move_sending):
-                            #print "haveSelected = " + str(haveSelected) + ", selected = " + str(selected)
                             if haveSelected:
                                 for x,y  in selectedMoves:
                                     target = b.tiles[x][y].click_check(mouseRect)
                                     if target is not None and selected is not None:
-                                        #client.event('send_move', (turn, selected.color, selected.type, selected.x, selected.y, x, y))
                                         client.event('send_move', (turn, selected, selected.x, selected.y, x, y))
                                         selected.move(x,y)
                                         haveSelected = False
                                         move_sending = True
-                                        #turn += 1
                                         for x,y in selectedMoves:
                                             b.tiles[x][y].swap_highlight()
-                                        """
-                                        # Check if combat takes place
-                                        for i in range(len(players)):
-                                            if i is not turnPlayer:
-                                                for piece in players[i].pieces:
-                                                    defender = piece.click_check(mouseRect)
-                                                    # Combat - see who wins
-                                                    if defender is not None:
-                                                        result = fight(selected, defender)
-                                                        if result is 0:
-                                                            selected.move(-1,-1)
-                                                        else:
-                                                            defender.move(-1,-1)
-                                                            """
                                         selectedMoves = []
                                         selected = None
                                         break    
@@ -380,14 +358,9 @@ def main():
                 p.pieces.draw(screen)
                 if p.nick:
                     screen.blit(p.nick, p.nickpos)
-            #for i in range(len(players)):
-                #if i is not turnPlayer:
-                    #players[i].pieces.draw(screen)
-            #players[turnPlayer].pieces.draw(screen)
             if mode in [6,7]:
                 marker.draw(screen)
         hud.paint()
-        #screen.blit(titleImage, titleRect)
                     
         pygame.display.flip()
         
