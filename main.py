@@ -199,7 +199,7 @@ def main():
                 mode = event.mode
                 if mode is 1: # loading screen
                     #jid = event.nick + '@andrew-win7'
-                    jid = event.nick + '@67.255.21.127'
+                    jid = event.nick + '@24.5.140.42'
                     myNick = event.nick
                     client = Client(jid, 'hello123', LOBBY_JID, event.nick, 'stratego.andrew-win7', get='all')
                 elif mode is 2:

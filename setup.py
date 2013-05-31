@@ -7,7 +7,7 @@ base = None
 build_exe_options = {"include_files": ['assets', 'freesansbold.ttf', 'default', 'rooms.txt', 'users.txt', 'sleekxmpp']}
 
 setup(  name = "pyStratego",
-            version = "0.3",
+            version = "0.4",
             description = "Multiplayer Online Ultimate Stratego, now with AI!",
             author = "Andrew Francis",
             author_email= "agf33@cornell.edu",
